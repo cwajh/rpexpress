@@ -3,6 +3,7 @@ http://i.imgur.com/MI7If9T.png
 http://i.imgur.com/JB8PLp5.png
 
 Asymmetric
+
 | A       |  B   |  C      |
 |---------|------|---------|
 | Muse    | has! | Mun     |
