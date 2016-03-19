@@ -4,32 +4,42 @@ http://i.imgur.com/JB8PLp5.png
 
 Asymmetric
 
-| Group A | has        | Group B |
-|--------:|:----------:|---------|
-| Muse    | has a      | Mun     |
-| Starter | has a      | Muse    |
-| Starter | may have a | Avatar  |
-| Starter | may have a | Comm    |
-| Thread  | has a      | Starter |
-| Post    | has a      | Thread  |
-| Post    | may have a | Avatar  |
-| Starter | may have a | ACL (R) |
-| Starter | may have a | ACL (W) |
-| Thread  | may have a | ACL (R) |
-| Thread  | may have a | ACL (W) |
-| Chat    | may have a | Comm    |
-| Chat    | may have a | Post    |
-| Chatter | has a      | Chat    |
-| Chatter | has a      | Mun     |
-| Chatter | may have a | Userpic |
-| Page    | may have a | Comm    |
-| Page    | may have a | Muse    |
-| Comm    | may have a | ACL (R) |
-| Comm    | has a      | ACL (M) |
-| Comm    | has a      | ACL (A) |
+| Group A | has      | Group B |
+|---------|----------|---------|
+| Muse    | has      | Mun     |
+| Starter | has      | Muse    |
+| Starter | may have | Avatar  |
+| Starter | may have | Comm    |
+| Thread  | has      | Starter |
+| Post    | has      | Thread  |
+| Post    | may have | Avatar  |
+| Starter | may have | ACL (R) |
+| Starter | may have | ACL (W) |
+| Thread  | may have | ACL (R) |
+| Thread  | may have | ACL (W) |
+| Chat    | may have | Comm    |
+| Chat    | may have | Post    |
+| Chatter | has      | Chat    |
+| Chatter | has      | Mun     |
+| Chatter | may have | Userpic |
+| Page    | may have | Comm    |
+| Page    | may have | Muse    |
+| Comm    | may have | ACL (R) |
+| Comm    | has      | ACL (M) |
+| Comm    | has      | ACL (A) |
+| App     | has      | Comm    |
+| App     | has      | Muse    |
+| App     | may have | Mun (A) |
 
 Many-to-many
+
+| M       | N      |
+|---------|--------|
 | Muse    | Comm   |
 | Starter | Tag    |
 | Thread  | Tag    |
+| Mun     | Tag (F)|
 | Muse    | Thread |
+| ACL     | Mun    |
+| ACL     | Muse   |
+| ACL     | Comm   |
