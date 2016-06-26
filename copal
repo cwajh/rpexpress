@@ -1,0 +1,318 @@
+#!/usr/bin/python3
+from collections import namedtuple
+import pyparsing
+pyparsing.ParserElement.setDefaultWhitespaceChars('')
+from pyparsing import QuotedString, Regex, ZeroOrMore, LineEnd, Literal, Forward, Optional, MatchFirst, FollowedBy
+import re
+import os
+
+""" #reenable this garbage if/when I start to care about how generated newlines look
+
+initial_whitespace = lambda s: re.search(r'^[ \t]*',s)
+def whitespace_layout_len(s):
+	
+#	match = re.search(r'^[ \t]*')
+#	if not match:
+#		return s
+#	return s.replace(match.group(0),match.group(0).replace('\t',' '*spt),1)
+
+def normalize_indents(s):
+	lines = s.split('\n')
+	# length of all lines with actual content
+	initial_space_ct = [len(initial_whitespace(line))
+				for line in lines
+				if len(line.lstrip())]
+	minimum_indentation = min(initial_space_ct)
+	[line.replace(r'^' + r'[ \t]'*)]
+"""
+
+def wrap_as_lstring(s):
+	escaped_txt = s.encode('unicode-escape').decode().replace('"', '\\"')
+	return 'L"%s"'%escaped_txt
+
+
+###### Classes for parser elements. All such classes have two prerequisites:
+###### 1) Initialize with the setParseAction parameters.
+###### 2) Implement pretty_string or inner_string.
+class CopalNode:
+	def __init__(self, parsed_string, location, tokens):
+		self.parsed_string = parsed_string
+		self.location = location
+		self.tokens = tokens
+	def __repr__(self):
+		tokens = self.tokens[:]
+		if len(tokens) == 1:
+			tokens = tokens[0]
+		return '%s(%s)'%(self.__class__.__name__,repr(tokens))
+	def inner_string(self):
+		raise NotImplementedError("CopalNodes must be subclassed with their own inner_string implementation.")
+	def pretty_string(self, inline=False, indent=0):
+		r = self.inner_string()
+		if not inline and r:
+			r = '\tout << L"%s" << %s << std::endl;\n'%( "\\t" * indent, r)
+		elif not r:
+			r = None
+		return r
+	def headerable(self):
+		return False
+	def leading_whitespace(self):
+		return False
+	def trailing_whitespace(self):
+		return False
+	def has_nonwhite_content(self):
+		return True
+
+class CommentNode(CopalNode):
+	def __init__(self, parsed_string, location, tokens):
+		super().__init__(parsed_string, location, tokens)
+	def __repr__(self):
+		return '%s(%s)'%(self.__class__.__name__,repr(self.tokens))
+	def pretty_string(self, inline=False, indent=0):
+		# Comments should not be present in generated code nor generated HTML.
+		if inline:
+			return None
+		else:
+			return ""
+	def has_nonwhite_content(self):
+		return False
+
+class CExprNode(CopalNode):
+	def inner_string(self):
+		return "(%s)"%self.tokens[0]
+
+class CBlockNode(CopalNode):
+	def pretty_string(self, inline=False, indent=0):
+		txt = '\t' + self.tokens[0]
+		if inline:
+			txt = "std::endl;\n" + txt + ";\n\tout"
+		return txt
+	def headerable(self):
+		return True
+
+class CLineNode(CBlockNode):
+	pass
+
+class PlaintextNode(CopalNode):
+	def inner_string(self):
+		txt = self.tokens[0]
+		# normalize whitespace.
+		if txt != txt.lstrip():
+			txt = " "+txt.lstrip()
+		if txt != txt.rstrip():
+			txt = txt.rstrip() + " "
+		assert("\n" not in wrap_as_lstring(txt))
+		if not len(txt):
+			return None
+		return wrap_as_lstring(txt)
+	def leading_whitespace(self):
+		txt = self.tokens[0]
+		return txt != txt.lstrip()
+	def trailing_whitespace(self):
+		txt = self.tokens[0]
+		return txt != txt.rstrip()
+	def has_nonwhite_content(self):
+		txt = self.tokens[0]
+		return True if txt.strip() else False
+
+class TagDefNode(CopalNode):
+	def __repr__(self):
+		stuff = ["name=%r"%(self.tag_name)]
+		if self.id:
+			stuff.append("id=%r"%(self.id))
+		if self.classes:
+			stuff.append("classes=%r"%(self.classes,))
+		if self.attributes:
+			stuff.append("attrs=%r"%(self.attributes,))
+		return '%s(%s)'%(self.__class__.__name__,", ".join(stuff))
+	def __init__(self, parsed_string, location, tokens):
+		#tokens = tokens[1:-1] # remove parens
+		super().__init__(parsed_string, location, tokens)
+		self.tag_name = tokens[0]
+		self.classes = [q.contents for q in tokens[1:] if q.name == "CSSClass"]
+		ids = [q.contents for q in tokens[1:] if q.name == "CSSIdent"]
+		if ids:
+			assert(len(ids) < 2)
+			self.id = ids[0]
+		else:
+			self.id = None
+		attributes = [q for q in tokens[1:][-1:] if q.name == "TagAttributes"]
+		if attributes:
+			assert(len(attributes) < 2)
+			self.attributes=attributes[0].contents
+		else:
+			self.attributes = None
+	def inner_string(self):
+		parts = [wrap_as_lstring("<"+self.tag_name)]
+		if self.id:
+			parts.append(wrap_as_lstring(' id="%s"'%(self.id)))
+		if self.classes:
+			parts.append(wrap_as_lstring(' class="%s"'%(" ".join(self.classes))))
+		if self.attributes:
+			parts.append('L" "')
+			parts += [q.pretty_string(inline=True) for q in self.attributes]
+		return " << ".join(q for q in parts if q is not None)
+
+class TagNode(CopalNode):
+	def __init__(self, parsed_string, location, tokens):
+		super().__init__(parsed_string, location, tokens)
+		self.definition = tokens[1]
+		self.contents = tokens[3:-1]
+		self.self_closing = (True if tokens[-1].startswith('/') else False)
+	def __repr__(self):
+		stuff = [repr(self.definition)]
+		stuff += [repr(q) for q in self.contents]
+		if self.self_closing:
+			stuff.append('self_closing=True')
+		return '%s(%s)'%(self.__class__.__name__,", ".join(stuff))
+	def inner_string(self):
+		opening_tag = self.definition.pretty_string(inline=True)
+		assert(opening_tag is not None)
+		if self.self_closing:
+			return opening_tag + ' << L" />"'
+		return opening_tag + ' << L">"'
+	def pretty_string(self, inline=False, indent=0):
+		if self.self_closing:
+			return super().pretty_string(inline,indent)
+		front = self.inner_string()
+		back = wrap_as_lstring("</%s>"%(self.definition.tag_name))
+		elements = [front]
+		needs_leading_spacer = False
+		for child in self.contents:
+			if needs_leading_spacer or child.leading_whitespace():
+				if not child.has_nonwhite_content():
+					# the child itself has no content.
+					# mark that a spacer is still needed & continue
+					needs_leading_spacer = True
+					continue
+				# indent+1 because we're inside the current tag.
+				elements.append('std::endl;\n\tout << L"%s"'%('\\t'*(indent+1)))
+			if child.has_nonwhite_content():
+				elements.append(child.pretty_string(inline=True, indent=indent+1))
+			needs_leading_spacer = child.trailing_whitespace()
+		if needs_leading_spacer:
+			elements.append('std::endl;\n\tout << L"%s"'%('\\t'*indent))
+		elements.append(back)
+		whole = " << ".join(elements)
+		if inline:
+			return whole
+		else:
+			return '\tout << L"%s" << %s << std::endl;\n'%( "\\t" * indent, whole)
+
+def parse_func(element_name, idx_range=slice(None)):
+	"""Generic method to create holder objects for meaningful parsed tokens"""
+	namedtuple_class = namedtuple(element_name,['contents','name'])
+	return lambda parsed_string, location, tokens: namedtuple_class(tokens[idx_range], element_name)
+
+def tag_parse_action(parsed_string, location, tokens):
+	"""Takes the parsed elements of a Tag and returns a Tag"""
+	Tag = namedtuple('Tag', 'definition contents self_closing')
+	return Tag(tokens[1],tokens[3:-1],(True if tokens[-1].startswith('/') else False))
+
+###### Grammar Definition
+
+NonEoL = Regex('[^\n]*')
+Whitespace = Regex('\s+')
+
+BlockComment = QuotedString('&/*', endQuoteChar='*/&', multiline=True).setParseAction(CommentNode)
+CExpr        = QuotedString('&{{', endQuoteChar='}}&', multiline=True).setParseAction(CExprNode)
+CBlock       = QuotedString('<{{', endQuoteChar='}}>', multiline=True).setParseAction(CBlockNode)
+
+LineComment = (Literal('&//') + NonEoL + LineEnd()).setParseAction(CommentNode)
+CLine = (Literal('&&') + NonEoL + LineEnd()).setParseAction(CLineNode)
+
+Plaintext = Regex(r'(([^&<>])|(&[^&/{]))*').setParseAction(PlaintextNode)
+PlaintextNoTrailingSlash = Regex(r'((([^&<>])|(&[^&/{]))*(([^/&<>])|(&[^&/{])))?').setParseAction(PlaintextNode)
+# Difference: )s aren't allowed
+AttributeText = Regex(r'(([^&<>)])|(&[^&/{]))*').setParseAction(PlaintextNode)
+
+BasicTagless = Plaintext + ZeroOrMore( (LineComment | BlockComment | CExpr | CBlock | CLine) + Plaintext )
+
+Fragment = Forward()
+
+TagName = Regex(r'[a-zA-Z_:][a-zA-Z0-9_:-]*')
+CSSName = Regex(r'-?[_a-zA-Z][_a-zA-Z0-9-]*')
+CSSClass = (Literal('.') + CSSName).setParseAction(parse_func("CSSClass",1))
+CSSIdent = (Literal('#') + CSSName).setParseAction(parse_func("CSSIdent",1))
+
+TagAttributes = (Literal('(') + AttributeText + ZeroOrMore( CExpr + AttributeText ) + Literal(')')).setParseAction(parse_func("TagAttributes",slice(1,-1)))
+TagDefinition = (TagName + ZeroOrMore(CSSClass) + Optional(CSSIdent + ZeroOrMore(CSSClass)) + Optional(TagAttributes)).setParseAction(TagDefNode)
+
+FragmentWithoutEatingTrailingSlash = MatchFirst(
+	(Fragment + FollowedBy(Literal('/'))),
+	Fragment
+)
+Tag = (Regex('<\s*') + TagDefinition + Whitespace + FragmentWithoutEatingTrailingSlash + Regex(r'/?>')).setParseAction(TagNode)
+
+Fragment << (ZeroOrMore( Plaintext + (LineComment | BlockComment | CExpr | CBlock | CLine | Tag) ) + PlaintextNoTrailingSlash)
+
+def gen_header_body(name,input,doctype, base_indent = 0):
+	header = ""
+	top_nodes = [q for q in Fragment.parseString(input)]
+	while top_nodes and not top_nodes[0].pretty_string(inline=True):
+		top_nodes = top_nodes[1:]
+	while top_nodes and top_nodes[0].headerable():
+		header += top_nodes[0].pretty_string()
+		top_nodes = top_nodes[1:]
+	content = "".join(qq for qq in [q.pretty_string(indent=base_indent) for q in top_nodes] if qq)
+	if doctype:
+		doctype = "<!DOCTYPE %s>"%(doctype)
+		content = "\tout << %s << std::endl;\n"%wrap_as_lstring(doctype) + content
+	return namedtuple('GHB','header body')(header, """template<typename O, typename P>
+inline void %s(O& out, P& params) {
+%s
+}
+ """%(name,content))
+
+def gen(name, ghbs, src_name=None):
+	header = '\n'.join([q.header for q in ghbs])
+	bodies = '\n'.join([q.body for q in ghbs])
+
+	return ("""/// Autogenerated%(autogen)s. Do not edit.
+#ifndef COPAL_AUTOGEN_%(cname)s_HH
+#define COPAL_AUTOGEN_%(cname)s_HH
+#include <ostream>
+
+%(content)s
+
+#endif /* COPAL_AUTOGEN_%(cname)s_HH */
+"""%{'cname':name.upper(), 'autogen':(' from %s'%(src_name.replace('\n','_')) if src_name else ""),'content':header+'\n'+bodies})
+
+def names_for_path(path):
+	dir, filename = os.path.split(path)
+	filename = filename.rsplit('.',1)[0]
+	out_filename = os.path.join(dir,filename+'.hh')
+	if filename[0] in '1234567890':
+		filename = "_" + filename
+	symbol_name = re.sub(r'[^0-9a-zA-Z_]','_',filename)
+	return (out_filename, symbol_name)
+
+assert(names_for_path("a/b/c.cpl") == ('a/b/c.hh','c'))
+assert(names_for_path("/a/b/c!@#$%^&*().cpl") == ('/a/b/c!@#$%^&*().hh','c__________'))
+assert(names_for_path("abadede") == ("abadede.hh","abadede"))
+
+if __name__ == '__main__':
+	import argparse
+	parser = argparse.ArgumentParser(description='converts copal templates into C++ headers')
+	parser.add_argument('files', metavar='FILE', nargs='+', help='Copal files to be processed. TODO: support >1.')
+	parser.add_argument('-o','--output', dest='output', default=None,
+		help='Output file for generated functions. If not provided, will output to FILE.hh where FILE is the first input file.')
+	parser.add_argument('-d', '--doctype', default='html',
+		help='Doctype for the HTML produced by the generated code. Defaults to `html`')
+	parser.add_argument('-c', '--no-doctype', dest='print_doctype', action='store_false',
+		help="Don't generate a doctype at all.")
+	parser.add_argument('-t', '--indent', type=int, default=0,
+		help="Base indent of the HTML produced by the generated code.")
+	parser.add_argument('-n', '--function', '--name', default=None,
+		help="Function name for calling the generated code.")
+	args = parser.parse_args()
+	out_file, func_name = names_for_path(args.files[0])
+	if args.output:
+		out_file = args.output
+	if args.function:
+		func_name = args.function
+	contents = None
+	with open(args.files[0]) as aa:
+		contents = aa.read()
+	ghb = gen_header_body(func_name, contents, args.doctype if args.print_doctype else None, args.indent)
+	with open(out_file, 'w') as ofile:
+		ofile.write(gen(func_name,[ghb],args.files[0]))

@@ -1,0 +1,46 @@
+#!/usr/bin/python3
+
+import tempfile
+import subprocess
+import os.path
+import sys
+import string
+import shutil
+
+url_safe_characters = string.ascii_letters + string.digits + '.~_-'
+
+with tempfile.TemporaryDirectory() as compile_dir:
+	json_file = None
+	if len(sys.argv) > 1:
+		input_file = sys.argv[1]
+		if len(sys.argv) > 2:
+			json_file = os.path.abspath(sys.argv[2])
+	else:
+		input_file = os.path.join(compile_dir,'tmp.am')
+		with open(input_file,'w') as stdin_sink:
+			shutil.copyfileobj(sys.stdin,stdin_sink)
+
+	subprocess.check_call(['copal','-o',os.path.join(compile_dir,'html.hh'),'-n','gen_html',input_file])
+	cc_path = os.path.join(compile_dir,'html.cc')
+	with open(cc_path,'w') as cc_file:
+		if json_file:
+			cpl_argument_gen = "nlohmann::json a; std::cin >> a;"
+		else:
+			cpl_argument_gen = "int a;"
+		cc_file.write("""#include "html.hh"
+#include <iostream>
+#include <locale>
+#include <json.hpp>
+
+int main(int argc, char *argv[]) {
+	std::locale::global(std::locale("en_US.utf8"));
+	std::wcout.imbue(std::locale());
+        %s
+        gen_html(std::wcout, a);
+        return 0;
+}
+"""%cpl_argument_gen)
+	bin_path = os.path.join(compile_dir,'gen_html')
+	subprocess.check_call(['g++','-std=c++11','-I'+os.path.expanduser('~/local/include'),cc_path,'-o',bin_path])
+	subprocess.check_call(['env','LC_ALL=en_US.utf8',bin_path], stdin=(open(json_file) if json_file else None))
+

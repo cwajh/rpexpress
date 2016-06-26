@@ -1,6 +1,9 @@
 Templated pages are written in Copal. This is a slight modification of the Amber
 (https://github.com/burner/sweet.hpp.git) language, completely rewritten.
 
+cpl2html gives a way to quickly get up and running with a cpl file. It requires the
+JSON for Modern C++ library (https://github.com/nlohmann/json).
+
 Use a single fastcgi++ to call all page headers for dynamic access.
 
 	g++ --std=c++1y -I/home/rpexpress/local/include -L/home/rpexpress/local/lib \
