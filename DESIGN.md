@@ -35,25 +35,27 @@ Art | ...of characters. Charahub feature. Uploader can only tag a character if n
 |---------|----------|---------|
 | Mun     | has      | ACL (B) |
 | Mun     | has      | ACL (F) |
-| Mun     | soon has | Dash    |
+| Mun     | may have | Dash    |
+| Mun     | may have | Userpic |
 | Muse    | has      | Mun     |
+| Muse    | may have | Avatar  |
 | Starter | has      | Post    |
-| Starter | may have | Avatar  |
 | Starter | may have | Comm    |
 | Starter | may have | ACL (R) |
 | Starter | may have | ACL (W) |
-| Starter | may have | Avatar  |
 | Thread  | has      | Starter |
 | Thread  | may have | ACL (R) |
 | Thread  | may have | ACL (W) |
+| Thread  | may have | Muse (C)|
 | Post    | may have | Thread  |
 | Post    | has      | Muse    |
 | Post    | may have | Avatar  |
 | Chat    | may have | Comm    |
 | Chat    | may have | Post    |
-| Comment | has      | Chat    |
-| Comment | has      | Mun     |
-| Comment | may have | Userpic |
+| Chat    | may have | Muse    |
+| Message | has      | Chat    |
+| Message | has      | Mun     |
+| Message | may have | Userpic |
 | Page    | may have | Comm    |
 | Page    | may have | Muse    |
 | Comm    | may have | ACL (R) |
@@ -73,7 +75,8 @@ Art | ...of characters. Charahub feature. Uploader can only tag a character if n
 | Question| has      | Muse(R) |
 | Question| may have | Mun (S) |
 | Question| may have | Muse(S) |
-| Answer  | has      | Question|
+| Question| may have | Post    |
+| Art     | has      | Mun     |
 
 ### Many-to-many
 
