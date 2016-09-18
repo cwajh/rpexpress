@@ -1,0 +1,15 @@
+{
+	"muse_name":"Someone",
+	"gallery_items":[
+		{"id64":"a-zA-Z0-9_-",
+			"path":"/mockups/portrait.png",
+			"tooltip":"secret fun text",
+			"alt_text":"A description of the image.",
+			"description": "The smile of one who has found the key.",
+			"tags": [
+				{"css":"witch_runes","path":"/witch-runes","name":"witch runes"},
+				{"css":"good_stuff_maynard","path":"/good-stuff-maynard","name":"good stuff maynard!"}
+			]
+		}
+	]
+}

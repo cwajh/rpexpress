@@ -1,0 +1,21 @@
+{
+	"muse_name": "Mandy Strif",
+	"profile_image": "/mockups/ms_portrait1.gif",
+	"profile_image_tooltip": "",
+	"profile_image_count": 2,
+	"profile_image_index": 1,
+	"description": "<s>The first of many.</s> At your service.",
+	"major_stats": [
+		{"stat":"Age","value":"<a target='_blank' href='https://en.wikipedia.org/wiki/NaN'>NaN</a>"},
+		{"stat":"Canon","value":"Pokemon"}
+	],
+	"minor_stats": [
+		{"stat":"Species", "value":"89h Missingno."},
+		{"stat":"Occupation", "value":"Thrift Store Owner / Procurement Specialist"},
+		{"stat":"Physical Description", "value":"In his early twenties, with a rectangular, long-limbed build. Black-haired, gray-eyed. Prefers concealing clothing; his usual outfit is a black beanie and slip-on shoes, tan cargoes and gloves, and a purple turtleneck that matches his eyes. Apparently nearsighted; wears square spectacles that he has never been seen to take off.<br class='nl'/>Beneath his revealing clothing is the proof of his ancestry &ndash; chequered areas where squares of him are color-shifted or invisible. In these spots, he's incredibly sensitive; it would only take a middling hit to rupture organs or break bones."},
+		{"stat":"Personality", "value":"Outwardly, Mandy is every kind of personable in the book &ndash; enthusiastic with others who are enthusiastic, contemplative when with other dreamers, comforting for someone who's had a bad day, witty and snarky when everyone else is yakking it up too. He genuinely likes to put people at ease, whatever the situation, and a lot of his human-watching was aimed at figuring out how to do it. Incidentally, this is also why he's taken up the job he has &ndash; to try to make things easier for people <em>permanently</em>, so he doesn't have to be there to keep it sustained. (The underlying desire here is to be \"useful\" to humans so that they'll be drawn into the study of more powerful, more unstable, more dangerous glitches, compared to which a Missingno. is relatively tame.)<br class='nl'/>However, while he may be personable, he's also <em>very</em> careful... almost to the point of paranoia. Whatever mode he's in, he does everything in his power to deflect personal questions from people he doesn't trust, and he trusts almost nobody &ndash; not his clients, not his human or Pokémon friends, not even other glitches whose interests may run counter to his own. In this way, at least as far as he knows, he's been able to keep his identity as a Pokémon (and riskier yet, as an <em>anomalous</em>, <em>reality-warping</em> Pokémon) secret and safe."},
+		{"stat":"Setting", "value":"A Pokémon AU where there's gijinkas running around for whatever reason."},
+		{"stat":"Strengths", "value":"If he has the drop on somebody and a Power Herb in his pocket, he can generally fire off a Sky Attack and knock out anyone who's not especially physically sturdy in one blow.<br class='nl'/>Knows glitches."},
+		{"stat":"Weaknesses", "value":"If his first attack isn't enough, his impossible fragility will probably ensure he won't get off a second attack in a straight fight.<br class='nl'/>Can't perform most of the glitches he knows himself. Anything that requires a Pokédex (f'rex, activating his own item duplication) or a team is out of the question.<br class='nl'/>Odd mannerisms will make him almost always come across as a \"weird foreigner\"."}
+	]
+}

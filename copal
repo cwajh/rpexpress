@@ -89,8 +89,14 @@ class CBlockNode(CopalNode):
 	def headerable(self):
 		return True
 
-class CLineNode(CBlockNode):
-	pass
+class CLineNode(CopalNode):
+	def pretty_string(self, inline=False, indent=0):
+		txt = self.tokens[1]
+		if inline:
+			txt = "\tstd::endl;\n" + txt + ";\n\tout"
+		return txt
+	def headerable(self):
+		return True
 
 class PlaintextNode(CopalNode):
 	def inner_string(self):
