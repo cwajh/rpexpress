@@ -1,0 +1,48 @@
+#!/usr/bin/python3
+
+import tempfile
+import subprocess
+import os.path
+import sys
+import string
+import shutil
+
+url_safe_characters = string.ascii_letters + string.digits + '.~_-'
+
+import argparse
+parser = argparse.ArgumentParser(description='converts copal templates into HTML files')
+parser.add_argument('files', metavar='FILE', nargs='+', help='Copal files to be processed. TODO: support >1.')
+#parser.add_argument('-o','--output', dest='output', default=None,
+#	help='Output file for generated document. If not provided, will output to FILE.html where FILE is the first input file.')
+parser.add_argument('-s','--source', action='append', help="Additional sourcefiles to include.")
+args = parser.parse_args()
+
+with tempfile.TemporaryDirectory() as compile_dir:
+	if len(args.files):
+		input_file = args.files[0]
+	else:
+		input_file = os.path.join(compile_dir,'tmp.am')
+		with open(input_file,'w') as stdin_sink:
+			shutil.copyfileobj(sys.stdin,stdin_sink)
+
+	subprocess.check_call(['copal','-o',os.path.join(compile_dir,'html.hh'),'-n','gen_html',input_file])
+	cc_path = os.path.join(compile_dir,'html.cc')
+	with open(cc_path,'w') as cc_file:
+		cc_file.write("""#include "html.hh"
+#include <iostream>
+#include <locale>
+#include <pqxx/pqxx>
+
+int main(int argc, char *argv[]) {
+	std::locale::global(std::locale("en_US.utf8"));
+	std::wcout.imbue(std::locale());
+	pqxx::connection db_conn("dbname=rpexpress");
+	pqxx::work xact(db_conn, "inline");
+	gen_html(std::wcout, xact);
+	return 0;
+}
+""")
+	bin_path = os.path.join(compile_dir,'gen_html')
+	subprocess.check_call(['g++','-std=c++11','-lpqxx','-I'+os.path.expanduser('~/local/include'),'-I.',cc_path] + [q for q in args.source] + ['-o',bin_path])
+	subprocess.check_call(['env','LC_ALL=en_US.utf8',bin_path])
+
