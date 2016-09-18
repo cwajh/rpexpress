@@ -1,0 +1,46 @@
+<{{
+#include <cwajh.hh>
+}}>
+< html
+	<head
+		<link(rel='stylesheet' type='text/css' href='theme.css') />
+		<title &{{ s2w(params["muse_name"]) }}&'s Gallery on RP Express >
+	>
+	<body
+		<nav#intramuse_nav
+			<ul#intramuse_nav_list
+				<li.intramuse_nav_item#muse_info_nav <a(href='info.html') info>>
+				<li.intramuse_nav_item#muse_gallery_nav < a(href='gallery.html') gallery>>
+				<li.intramuse_nav_item#muse_qna_nav < a(href='askblog.html') q&amp;a>>
+				<li.intramuse_nav_item#muse_threads_nav < a(href='threads.html') threads>>
+			>
+		>
+		<div#gallery_body
+			<ul#gallery_items
+				<{{ for(auto entry : params["gallery_items"]) { }}>
+					<li(id='gallery_item_&{{ s2w(entry["id64"]) }}&' class='gallery_item<{{
+					for(auto tag : entry["tags"]) {
+						out << L" gallery_tag_" << s2w(tag["css"]);
+					}
+					}}>')
+
+						<img.gallery_item_content(id="gallery_item_content_&{{ s2w(entry["id64"]) }}&"
+						                         src="&{{ s2w(entry["path"])     }}&"
+						                         alt="&{{ s2w(entry["alt_text"]) }}&"
+						                       title="&{{ s2w(entry["tooltip"])  }}&") />
+						<div.gallery_item_text
+							<div.gallery_item_description &{{ s2w(entry["description"]) }}&>
+							<{{ if(entry["credit"]!=nullptr) { }}>
+								<div.gallery_item_credit credit: &{{ s2w(entry["credit"]) }}&>
+							<{{ } }}>
+
+							<ul.gallery_item_tags <{{ for (auto tag : entry["tags"]) { }}>
+								<li.gallery_item_tag <a(href="&{{ s2w(tag["path"]) }}&") &{{s2w(tag["name"])}}&>>
+							<{{ } }}> >
+						>
+					>
+				<{{ } }}>
+			>
+		>
+	>
+>

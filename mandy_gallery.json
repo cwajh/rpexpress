@@ -1,0 +1,26 @@
+{
+	"muse_name":"Mandy Strif",
+	"gallery_items":[
+		{"id64":"a-zA-Z0-9_-",
+			"path":"/mockups/ms_portrait1.gif",
+			"tooltip":"nah, just a trick of the light",
+			"alt_text":"Full-length front picture of Mandy with a confident smile.",
+			"description": "Profile portrait.",
+			"credit": "<a target='_blank' href='http://scribblecee.tumblr.com/'>emcee</a>",
+			"tags": [
+				{"css":"epilepsy_warning","path":"/epilepsy-warning","name":"epilepsy warning"},
+				{"css":"gif","path":"/gif","name":"gif"}
+			]
+		},
+		{"id64":"aaaaaaaaa",
+			"path":"/mockups/ms_portrait2.png",
+			"tooltip":"and the Q goes...",
+			"alt_text":"Mandy in a darkened, candle-lit hotel room, placing tiles with letters and numbers on the floor.",
+			"description": "Mandy setting up for an attempt at <a target='_blank' href='https://www.youtube.com/watch?v=Sst_5kAX2y4'>High Summoning</a>.",
+			"credit": "<a target='_blank' href='http://its-skeletor.tumblr.com'>ray</a>",
+			"tags": [
+				{"css":"codex_pacifica","path":"/codex-pacifica","name":"codex pacifica"}
+			]
+		}
+	]
+}

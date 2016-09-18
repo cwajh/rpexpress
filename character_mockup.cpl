@@ -1,0 +1,45 @@
+<{{
+#include <cwajh.hh>
+}}>
+< html
+	< head
+		<link(rel='stylesheet' type='text/css' href='theme.css') />
+		<title &{{ s2w(params["muse_name"]) }}&>
+	>
+	< body.doc_with_major_pane
+		< nav#intramuse_nav
+			< ul#intramuse_nav_list
+				<li.intramuse_nav_item#muse_info_nav <a(href='info.html') info>>
+				< li.intramuse_nav_item#muse_gallery_nav < a(href='gallery.html') gallery>>
+				< li.intramuse_nav_item#muse_qna_nav < a(href='askblog.html') q&amp;a>>
+				< li.intramuse_nav_item#muse_threads_nav < a(href='threads.html') threads>>
+			>
+		>
+		< div#major_pane
+			< h1#muse_name &{{ s2w(params["muse_name"]) }}&>
+			< div#muse_portraits
+				<{{	bool has_prev = params["profile_image_index"] > 1;
+					bool has_next = params["profile_image_count"] > params["profile_image_index"]; }}>
+				< img#prev_portrait_nav(&{{ has_prev ? L"src='prev_portrait_btn.png' class='prev_nav nav_enabled' alt='previous image'"
+				                                     : L"src='prev_portrait_placeholder.png' class='prev_nav nav_disabled'"}}&)
+				&/* TODO(cwajh): inline quote escaping for the title thingy? can it be auto from being inside the () block? */&
+				/>< img#muse_portrait(src='&{{ s2w(params["profile_image"]) }}&' title="&{{ s2w(params["profile_image_tooltip"]) }}&")
+				/>< img#next_portrait_nav(&{{ has_next ? L"src='next_portrait_btn.png' class='next_nav nav_enabled' alt='next image'"
+				                                     : L"src='next_portrait_placeholder.png' class='next_nav nav_disabled'"}}&) />
+			>
+			<div#muse_profile &{{ s2w(params["description"]) }}& >
+			<dl.stat_sheet#major_stats
+				<{{ for (auto stat : params["major_stats"]) { }}>
+				<dt.stat_name &{{ s2w(stat["stat"]) }}&> <dd.stat_value &{{ s2w(stat["value"]) }}&>
+				<{{ } }}>
+			>
+		>
+		< div#minor_pane
+			< dl.stat_sheet#minor_stats
+				<{{ for (auto stat : params["minor_stats"]) { }}>
+				<dt.stat_name &{{ s2w(stat["stat"]) }}&> <dd.stat_value &{{ s2w(stat["value"]) }}&>
+				<{{ } }}>
+			>
+		>
+	>
+>
