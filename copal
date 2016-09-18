@@ -2,7 +2,7 @@
 from collections import namedtuple
 import pyparsing
 pyparsing.ParserElement.setDefaultWhitespaceChars('')
-from pyparsing import QuotedString, Regex, ZeroOrMore, LineEnd, Literal, Forward, Optional, MatchFirst, FollowedBy
+from pyparsing import QuotedString, Regex, ZeroOrMore, LineEnd, Literal, Forward, Optional, MatchFirst, FollowedBy, OneOrMore,StringEnd
 import re
 import os
 
@@ -234,7 +234,7 @@ CSSName = Regex(r'-?[_a-zA-Z][_a-zA-Z0-9-]*')
 CSSClass = (Literal('.') + CSSName).setParseAction(parse_func("CSSClass",1))
 CSSIdent = (Literal('#') + CSSName).setParseAction(parse_func("CSSIdent",1))
 
-TagAttributes = (Literal('(') + AttributeText + ZeroOrMore( CExpr + AttributeText ) + Literal(')')).setParseAction(parse_func("TagAttributes",slice(1,-1)))
+TagAttributes = (Literal('(') + AttributeText + ZeroOrMore( (CExpr | CBlock) + AttributeText ) + Literal(')')).setParseAction(parse_func("TagAttributes",slice(1,-1)))
 TagDefinition = (TagName + ZeroOrMore(CSSClass) + Optional(CSSIdent + ZeroOrMore(CSSClass)) + Optional(TagAttributes)).setParseAction(TagDefNode)
 
 FragmentWithoutEatingTrailingSlash = MatchFirst(
@@ -244,15 +244,17 @@ FragmentWithoutEatingTrailingSlash = MatchFirst(
 Tag = (Regex('<\s*') + TagDefinition + Whitespace + FragmentWithoutEatingTrailingSlash + Regex(r'/?>')).setParseAction(TagNode)
 
 Fragment << (ZeroOrMore( Plaintext + (LineComment | BlockComment | CExpr | CBlock | CLine | Tag) ) + PlaintextNoTrailingSlash)
+DocumentFragment = OneOrMore( Plaintext + (LineComment | BlockComment | CExpr | CBlock | CLine | Tag) ) + PlaintextNoTrailingSlash
 
 def gen_header_body(name,input,doctype, base_indent = 0):
 	header = ""
-	top_nodes = [q for q in Fragment.parseString(input)]
+	top_nodes = [q for q in DocumentFragment.parseString(input)]
 	while top_nodes and not top_nodes[0].pretty_string(inline=True):
 		top_nodes = top_nodes[1:]
 	while top_nodes and top_nodes[0].headerable():
 		header += top_nodes[0].pretty_string()
 		top_nodes = top_nodes[1:]
+	#print(top_nodes)
 	content = "".join(qq for qq in [q.pretty_string(indent=base_indent) for q in top_nodes] if qq)
 	if doctype:
 		doctype = "<!DOCTYPE %s>"%(doctype)
