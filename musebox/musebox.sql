@@ -13,13 +13,20 @@ create table muns (
 );
 create table muses (
 	muse_id uuid primary key
-	username varchar(20),
+	username varchar(20), --indexed
 	name varchar(100),
+	short_description clob,
 	mun uuid references muns(mun),
 	default_avatar uuid,
 	p2p_acl uuid,
 	front_page uuid
 );
+create table muse_traits {
+	trait_id uuid primary key,
+	muse uuid,
+	trait_name varchar(250),
+	trait_value clob
+}
 create table starters (
 	starter_id uuid primary key,
 	top_post uuid,
