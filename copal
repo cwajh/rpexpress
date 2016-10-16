@@ -6,26 +6,6 @@ from pyparsing import QuotedString, Regex, ZeroOrMore, LineEnd, Literal, Forward
 import re
 import os
 
-""" #reenable this garbage if/when I start to care about how generated newlines look
-
-initial_whitespace = lambda s: re.search(r'^[ \t]*',s)
-def whitespace_layout_len(s):
-	
-#	match = re.search(r'^[ \t]*')
-#	if not match:
-#		return s
-#	return s.replace(match.group(0),match.group(0).replace('\t',' '*spt),1)
-
-def normalize_indents(s):
-	lines = s.split('\n')
-	# length of all lines with actual content
-	initial_space_ct = [len(initial_whitespace(line))
-				for line in lines
-				if len(line.lstrip())]
-	minimum_indentation = min(initial_space_ct)
-	[line.replace(r'^' + r'[ \t]'*)]
-"""
-
 def wrap_as_lstring(s):
 	escaped_txt = s.encode('unicode-escape').decode().replace('"', '\\"')
 	return 'L"%s"'%escaped_txt
@@ -255,21 +235,48 @@ DocumentFragment = OneOrMore( Plaintext + (LineComment | BlockComment | CExpr | 
 def gen_header_body(name,input,doctype, base_indent = 0):
 	header = ""
 	top_nodes = [q for q in DocumentFragment.parseString(input)]
+
+	# remove leading nodes that produce zero length strings.
 	while top_nodes and not top_nodes[0].pretty_string(inline=True):
 		top_nodes = top_nodes[1:]
+
+	# slurp nodes into the header as long as you can.
 	while top_nodes and top_nodes[0].headerable():
 		header += top_nodes[0].pretty_string()
 		top_nodes = top_nodes[1:]
-	#print(top_nodes)
+
+	header = """#define GEN_HEADERS namespace copal{namespace %(name)s { template<typename Environment> static auto gen_headers(Environment& env, std::map<std::string, std::string>& headers) { headers["Content-Type"] = "text/html; charset=utf-8";
+#define END_GEN_HEADERS } }}
+#define CPL_NAMESPACED namespace copal{namespace %(name)s {
+#define CPL_END_NAMESPACED }}
+/* header declarations for %(name)s */
+"""+header+'\n'+"""/* end header for %(name)s */
+#ifdef CUSTOM_GEN_HEADERS
+#undef CUSTOM_GEN_HEADERS
+#else
+GEN_HEADERS
+	headers["Content-Type"] = "text/html; charset=utf-8";
+END_GEN_HEADERS
+#endif
+#undef GEN_HEADERS
+#undef END_GEN_HEADERS
+#undef CPL_NAMESPACED
+#undef CPL_END_NAMESPACED
+"""
+	header = header%{'name':name}
+
+	# remaining nodes form the body.
 	content = "".join(qq for qq in [q.pretty_string(indent=base_indent) for q in top_nodes] if qq)
 	if doctype:
 		doctype = "<!DOCTYPE %s>"%(doctype)
 		content = "\tout << %s << std::endl;\n"%wrap_as_lstring(doctype) + content
-	return namedtuple('GHB','header body')(header, """template<typename O, typename P>
-inline void %s(O& out, P& params) {
-%s
+	return namedtuple('GHB','header body')(header, """namespace copal { namespace %(name)s {
+template<typename Output, typename Params>
+inline void gen_html(Output& out, Params& params) {
+%(content)s
 }
- """%(name,content))
+}}
+ """%({'name':name,'content':content}))
 
 def gen(name, ghbs, src_name=None):
 	header = '\n'.join([q.header for q in ghbs])
@@ -279,6 +286,7 @@ def gen(name, ghbs, src_name=None):
 #ifndef COPAL_AUTOGEN_%(cname)s_HH
 #define COPAL_AUTOGEN_%(cname)s_HH
 #include <ostream>
+#include <map>
 
 %(content)s
 

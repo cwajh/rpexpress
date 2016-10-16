@@ -25,24 +25,36 @@ with tempfile.TemporaryDirectory() as compile_dir:
 		with open(input_file,'w') as stdin_sink:
 			shutil.copyfileobj(sys.stdin,stdin_sink)
 
-	subprocess.check_call(['copal','-o',os.path.join(compile_dir,'html.hh'),'-n','gen_html',input_file])
+	subprocess.check_call(['copal','-o',os.path.join(compile_dir,'html.hh'),'-n','singleton',input_file])
 	cc_path = os.path.join(compile_dir,'html.cc')
 	with open(cc_path,'w') as cc_file:
 		cc_file.write("""#include "html.hh"
 #include <iostream>
 #include <locale>
+#include <map>
 #include <pqxx/pqxx>
+
+struct request_context {
+	pqxx::transaction<> *p_transaction;
+	std::string path;
+	std::multimap<std::string, std::string> get;
+	std::multimap<std::string, std::string> post;
+};
 
 int main(int argc, char *argv[]) {
 	std::locale::global(std::locale("en_US.utf8"));
 	std::wcout.imbue(std::locale());
 	pqxx::connection db_conn("dbname=rpexpress");
 	pqxx::work xact(db_conn, "inline");
-	gen_html(std::wcout, xact);
+	struct request_context ctx = {&xact, ""};
+
+	std::map<std::string, std::string> headers; //unused
+	auto params = copal::singleton::gen_headers(ctx, headers);
+	copal::singleton::gen_html(std::wcout, params);
 	return 0;
 }
 """)
 	bin_path = os.path.join(compile_dir,'gen_html')
-	subprocess.check_call(['g++','-std=c++11','-lpqxx','-I'+os.path.expanduser('~/local/include'),'-I.',cc_path] + [q for q in args.source] + ['-o',bin_path])
+	subprocess.check_call(['g++','-std=c++1y','-lpqxx','-I'+os.path.expanduser('~/local/include'),'-I.',cc_path] + [q for q in args.source] + ['-o',bin_path])
 	subprocess.check_call(['env','LC_ALL=en_US.utf8',bin_path])
 

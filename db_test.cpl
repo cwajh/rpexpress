@@ -1,10 +1,38 @@
-&& #include "db_access.hh"
+<{{
+#include <vector>
+#include <pqxx/pqxx>
+#include "cwajh.hh"
+
+#define CUSTOM_GEN_HEADERS
+GEN_HEADERS
+	struct BabyPhrase {
+		std::wstring phrase;
+		int64_t index;
+	};
+
+	std::vector<BabyPhrase> out_phrases;
+	pqxx::result phrase_result = env.p_transaction->exec("select * from test_phrases order by idx");
+	for(pqxx::result::size_type i = 0; i < phrase_result.size(); i++) {
+		BabyPhrase phrase;
+
+		std::string phrase_utf8;
+		phrase_result[i][0].to(phrase_utf8);
+		phrase.phrase = s2w(phrase_utf8);
+
+		phrase_result[i][1].to(phrase.index);
+
+		out_phrases.push_back(phrase);
+	}
+	return out_phrases;
+END_GEN_HEADERS
+}}>
+
 < head
 	< title Fourteen phrases to keep in mind. >
 >
 < body
 	< ul
-	&& for (auto item : phrases(params)) {
+	&& for (auto item : params) {
 		< li &{{ item.phrase }}& >
 	&& }
 	>

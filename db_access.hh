@@ -11,7 +11,7 @@ struct BabyPhrase {
 };
 
 std::vector<BabyPhrase> ez_phrases();
-std::vector<BabyPhrase> phrases(pqxx::work &transaction);
+std::vector<BabyPhrase> phrases(pqxx::transaction<> *transaction);
 
 
 //template<typename RowType> std::vector<RowType> db_rows(std::string query);
