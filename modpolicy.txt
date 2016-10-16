@@ -4,16 +4,19 @@ We are not defining law; we reserve the right to moderate, or to refrain from mo
 Rather, here is the spirit of the law – the principles which we hope will guide us.
 
 If you harm others in this venue by accident, we will give you the benefit of doubt and the opportunity to learn.
-	But after a certain point, a lack of progress at avoiding accidental harm can only be called negligent.
+	...but after a certain point, a lack of progress at avoiding accidental harm can only be called negligent.
 If you harm others in this venue out of negligence, we will sternly remind you to pay proper attention.
-	But after a certain point, a lack of progress at avoiding negligence can only be called deliberate.
+	...but after a certain point, a lack of progress at avoiding negligence can only be called deliberate.
 If you deliberately seek to harm others in this venue, you /may/ be given one warning as an act of unearned mercy.
-	But after that point, deliberate harmfulness requires that we excise you, if for no other reason than as a matter of public health.
+	...but after that point, deliberate harmfulness requires that we excise you, if for no other reason than as a matter of public health.
 
-Individual 1:1 and "Q&A" spaces are under the control of their authors, who are free to make rules of their own. We encourage you to construe these rules as the author's personal boundaries, and to disengage (stop interacting, and block further interaction if needed) if they're rules you can't accept. Of course, if harm is occurring regardless of those options, the situation can be reported for us to step in in an administrative capacity.
+Individual communities are under the control of their directors, who are also free to make rules of their own. We encourage communities to self-govern in a spirit of goodwill to all (where "all" explicitly includes victims of any trouble caused by community members). We hope that we do not have to step into communities in an administrative capacity, but we reserve the right to do so should our own principles call for it.
 
-Individual communities are under the control of their directors, who are also free to make rules of their own. We encourage communities to self-govern in a spirit of goodwill to all (where "all" explicitly includes victims of any trouble caused by community members). We hope that we do not have to step into communities in an administrative capacity, but we reserve the right to do so should our own principles require it.
+In ad-hoc interaction, where no community's jurisdiction applies, we encourage users to remember:
+*	That publicly-visible personal spaces are still personal spaces, where personal boundaries apply.
+*	That the site's block and filter mechanisms are provided to help people enforce those boundaries.
+*	That, therefore, it would take unusual extenuating circumstances for us to construe deliberate circumvention of the block and filter mechanisms as anything other than deliberate harmfulness.
 
-Finally: in order to protect ourselves and the existence of this venue, we also intend to excise anything we suspect is illegal for us to host, whether or not we consider it harmful in and of itself. Flaunting this will be construed as harm to the viability of the site itself - accidental, negligent, or deliberate, as appropriate.
+Finally: in order to protect ourselves and the existence of this venue, we also intend to excise anything we suspect is illegal for us to host, whether or not we consider it harmful in and of itself. Flaunting this will be construed as harm to the viability of the site as a whole - accidental, negligent, or deliberate, as appropriate.
 
 
