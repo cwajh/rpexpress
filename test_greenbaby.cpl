@@ -3,7 +3,6 @@
 #include <pqxx/pqxx>
 #include "cwajh.hh"
 
-#define CUSTOM_GEN_HEADERS
 GEN_HEADERS
 	struct BabyPhrase {
 		std::wstring phrase;
