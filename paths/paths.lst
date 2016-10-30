@@ -1,0 +1,5 @@
+test_greenbaby	/woop
+muse_profile	/muse/[^/]+/info(\.html)?
+muse_gallery	/muse/[^/]+/gallery(\.html)?
+coming_soon	/muse/[^/]+/askblog(\.html)?
+coming_soon	/muse/[^/]+/threads(\.html)?
