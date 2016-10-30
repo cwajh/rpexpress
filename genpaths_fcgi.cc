@@ -23,14 +23,19 @@ void error_log(const char* msg)
 }
 class TopServlet: public Fastcgipp::Request<wchar_t>
 {
-   thread_local pqxx::connection db_conn("dbname=rpexpress");
+   static pqxx::connection *db_conn(void) {
+      static thread_local pqxx::connection db_conn("dbname=rpexpress");
+      return &db_conn;
+   }
    bool response()
    {
       struct request_context ctx;
-      pqxx::work request_xact(db_conn, "request");
+      pqxx::work request_xact(*db_conn(), "request");
       ctx.p_transaction = &request_xact;
-      ctx.path = environment().scriptName;
+      // simply using scriptName leaves out later bits of the path. no good!
+      ctx.path = strip_query(environment().requestUri);
       ctx.get = environment().gets;
+      //error_log(environment().scriptName);
       //ctx.post = environment().posts;
 
       cplpaths::gen_response<Fastcgipp::Fcgistream<wchar_t>, struct request_context>(out, ctx);

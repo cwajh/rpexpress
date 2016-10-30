@@ -286,13 +286,16 @@ def gen(name, ghbs, src_name=None):
 #include <ostream>
 #include <map>
 
+#ifndef COPAL_AUTOGEN_COMMON_DECLARATIONS
+#define COPAL_AUTOGEN_COMMON_DECLARATIONS
 namespace copal {
 	typedef struct{} nothing_t;
-	static nothing_t nothing;
+	static constexpr nothing_t nothing;
 	template<typename Environment> static nothing_t _gen_headers(Environment& env, std::map<std::string, std::string>& headers) {
 		headers["Content-Type"] = "text/html; charset=utf-8";
 	}
 }
+#endif /* COPAL_AUTOGEN_COMMON_DECLARATIONS */
 
 %(content)s
 

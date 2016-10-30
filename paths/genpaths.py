@@ -30,7 +30,7 @@ with open(file) as paths:
 		module, regex = line.split('\t',1)
 		regex = regex.rstrip('\n')
 		imports.append('#include <copal/%s.hh>'%module)
-		regex_declarations.append('const std::regex path%d("%s");'%(lineno, str2cconst(regex)))
+		regex_declarations.append('const std::wregex path%d(L"%s");'%(lineno, str2cconst(regex)))
 		path_declarations.append(
 r"""		if(std::regex_match(ctx.path, path%(lineno)d)){
 			std::map<std::string, std::string> headers;
@@ -53,12 +53,12 @@ for import_stmt in imports:
 print ("namespace cplpaths {")
 for declaration in regex_declarations:
 	print ("\t"+declaration)
-print ("\ttemplate<typename Output, typename Context> void gen_response(Output &out, Context &ctx) {")
+print ("\ttemplate<typename Output, typename Context> inline void gen_response(Output &out, Context &ctx) {")
 for declaration in path_declarations:
 	print(declaration)
 print (
 r"""		out << "Status: 404 Not Found\r\nContent-Type: text/html; charset=utf-8\r\n\r\n";
-		out << "<h1>Template Not Found</h1>\r\n"
+		out << "<h1>Template Not Found</h1>\r\n";
 		out << "The server couldn't find a page matching \"" << ctx.path << "\".\r\n";
 		out << "This isn't expected; normally you should at least be seeing a fancier 404 page.\r\n";
 		out << "Please copy-paste this whole error message and send it to whoever runs the site.";
