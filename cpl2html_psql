@@ -14,7 +14,7 @@ parser = argparse.ArgumentParser(description='converts copal templates into HTML
 parser.add_argument('files', metavar='FILE', nargs='+', help='Copal files to be processed. TODO: support >1.')
 #parser.add_argument('-o','--output', dest='output', default=None,
 #	help='Output file for generated document. If not provided, will output to FILE.html where FILE is the first input file.')
-parser.add_argument('-s','--source', action='append', help="Additional sourcefiles to include.")
+parser.add_argument('-s','--source', action='append', help="Additional sourcefiles to include.", default=[])
 args = parser.parse_args()
 
 with tempfile.TemporaryDirectory() as compile_dir:

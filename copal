@@ -245,19 +245,12 @@ def gen_header_body(name,input,doctype, base_indent = 0):
 		header += top_nodes[0].pretty_string()
 		top_nodes = top_nodes[1:]
 
-	header = """#define GEN_HEADERS namespace copal{namespace %(name)s { template<typename Environment> static auto gen_headers(Environment& env, std::map<std::string, std::string>& headers) { headers["Content-Type"] = "text/html; charset=utf-8";
+	header = """#define GEN_HEADERS namespace copal{namespace %(name)s { template<typename Environment> static auto _gen_headers(Environment& env, std::map<std::string, std::string>& headers) { headers["Content-Type"] = "text/html; charset=utf-8";
 #define END_GEN_HEADERS } }}
 #define CPL_NAMESPACED namespace copal{namespace %(name)s {
 #define CPL_END_NAMESPACED }}
 /* header declarations for %(name)s */
 """+header+'\n'+"""/* end header for %(name)s */
-#ifdef CUSTOM_GEN_HEADERS
-#undef CUSTOM_GEN_HEADERS
-#else
-GEN_HEADERS
-	headers["Content-Type"] = "text/html; charset=utf-8";
-END_GEN_HEADERS
-#endif
 #undef GEN_HEADERS
 #undef END_GEN_HEADERS
 #undef CPL_NAMESPACED
@@ -271,6 +264,11 @@ END_GEN_HEADERS
 		doctype = "<!DOCTYPE %s>"%(doctype)
 		content = "\tout << %s << std::endl;\n"%wrap_as_lstring(doctype) + content
 	return namedtuple('GHB','header body')(header, """namespace copal { namespace %(name)s {
+template<typename Environment>
+inline auto gen_headers(Environment& env, std::map<std::string, std::string>& headers) {
+	return _gen_headers<Environment>(env, headers);
+}
+
 template<typename Output, typename Params>
 inline void gen_html(Output& out, Params& params) {
 %(content)s
@@ -287,6 +285,14 @@ def gen(name, ghbs, src_name=None):
 #define COPAL_AUTOGEN_%(cname)s_HH
 #include <ostream>
 #include <map>
+
+namespace copal {
+	typedef struct{} nothing_t;
+	static nothing_t nothing;
+	template<typename Environment> static nothing_t _gen_headers(Environment& env, std::map<std::string, std::string>& headers) {
+		headers["Content-Type"] = "text/html; charset=utf-8";
+	}
+}
 
 %(content)s
 
