@@ -29,7 +29,7 @@ with open(file) as paths:
 			sys.stderr.write('%s: file %s line %d has no tab\n'%(sys.argv[0],file, lineno))
 		module, regex = line.split('\t',1)
 		regex = regex.rstrip('\n')
-		imports.append('#include "copal/%s.hh"'%module)
+		imports.append('#include <copal/%s.hh>'%module)
 		regex_declarations.append('const std::regex path%d("%s");'%(lineno, str2cconst(regex)))
 		path_declarations.append(
 r"""		if(std::regex_match(ctx.path, path%(lineno)d)){
@@ -47,7 +47,7 @@ r"""		if(std::regex_match(ctx.path, path%(lineno)d)){
 		}
 """%{'lineno':lineno,'module':module})
 print ('#include <regex>')
-print ('#include "cwajh.hh"')
+print ('#include <cwajh.hh>')
 for import_stmt in imports:
 	print (import_stmt)
 print ("namespace cplpaths {")
