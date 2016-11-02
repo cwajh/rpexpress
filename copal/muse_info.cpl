@@ -1,0 +1,159 @@
+<{{
+#include <cwajh.hh>
+#include <string>
+#include <vector>
+#include <utility>
+#include <pqxx/pqxx>
+#include <regex>
+#include <path_info.hh>
+
+GEN_HEADERS
+	using namespace std;
+	struct {
+		bool found;
+		// From DB.
+		wstring muse_name;
+		long image_count;
+		wstring image_url;
+		wstring image_alt;
+		wstring image_tooltip;
+		wstring description;
+		vector<pair<wstring, wstring>> major_traits;
+		vector<pair<wstring, wstring>> minor_traits;
+		// From query args.
+		long image_index;
+	} muse_info;
+	auto txn = env.p_transaction;
+	pqxx::result muse_rs = txn->exec(
+		"select muse_id, name, short_description from muses where username = "
+		+ txn->quote(w2s(muse_for_path(env.path)))
+		+ " limit 1;"
+	);
+	if(muse_rs.size()) {
+		muse_info.found = true;
+	} else {
+		headers["Status"] = "404 Not Found";
+		muse_info.found = false;
+		return muse_info;
+	}
+	string u8_value;
+	muse_rs[0][1].to(u8_value);
+	muse_info.muse_name = s2w(u8_value);
+	muse_rs[0][2].to(u8_value);
+	muse_info.description = s2w(u8_value);
+
+	string muse_id;
+	muse_rs[0][0].to(muse_id);
+	
+	pqxx::result traits = txn->exec(
+		"select category, name, value from muse_traits "
+		"where muse = '" + muse_id + "' order by pos;"
+	);
+	for(int i=0; i<traits.size(); ++i) {
+		string category;
+		traits[i][0].to(category);
+		if(category == "major") {
+			string u8_key;
+			traits[i][1].to(u8_key);
+			traits[i][2].to(u8_value);
+			muse_info.major_traits.push_back(
+				make_pair(s2w(u8_key), s2w(u8_value))
+			);
+		} else if(category == "minor") {
+			string u8_key;
+			traits[i][1].to(u8_key);
+			traits[i][2].to(u8_value);
+			muse_info.minor_traits.push_back(
+				make_pair(s2w(u8_key), s2w(u8_value))
+			);
+		}
+	}
+
+	auto imgParam = env.get.find(L"img");
+	if (imgParam == env.get.end()) {
+		muse_info.image_index = 0;
+	} else {
+		muse_info.image_index = stol(imgParam->second);
+		if (muse_info.image_index < 0) {
+			muse_info.image_index = 0;
+		}
+	}
+	
+	pqxx::result art = txn->exec(
+		"select hash, extension, tooltip_text, fallback_text"
+		" from art inner join static_resource on (image = hash) "
+		" where muse = '" + muse_id + "' order by position;"
+	);
+
+	muse_info.image_count = art.size();
+	if (muse_info.image_index < muse_info.image_count) {
+		string url("/static/");
+		art[muse_info.image_index][0].to(u8_value);
+		url += u8_value;
+		art[muse_info.image_index][1].to(u8_value);
+		url += ".";
+		url += u8_value;
+		muse_info.image_url = s2w(url);
+		art[muse_info.image_index][2].to(u8_value);
+		muse_info.image_tooltip = s2w(u8_value);
+		art[muse_info.image_index][3].to(u8_value);
+		muse_info.image_alt = s2w(u8_value);
+	}
+	return muse_info;
+END_GEN_HEADERS
+
+}}>
+&&	if (!params.found) {
+		<h1 No such character as &{{ params.muse_name }}&... >
+&&		return;
+&&	}
+< html
+	< head
+		<link(rel='stylesheet' type='text/css' href='/static/theme.css') />
+		<title &{{ params.muse_name }}&>
+	>
+	< body.doc_with_major_pane
+		< nav#intramuse_nav	<ul#intramuse_nav_list
+			<li.intramuse_nav_item#muse_info_nav <a(href='info.html') info>>
+			<li.intramuse_nav_item#muse_gallery_nav <a(href='gallery.html') gallery>>
+			<li.intramuse_nav_item#muse_qna_nav <a(href='askblog.html') q&amp;a>>
+			<li.intramuse_nav_item#muse_threads_nav <a(href='threads.html') threads>>
+		> >
+		< div#major_pane
+
+			< h1#muse_name &{{ params.muse_name }}&>
+			< div#muse_portraits
+				&/* Sorry this section is a mess. 
+				  * All three img tags must have zero padding whitespace.
+				  * Makes things awkward. */&
+
+				<{{	bool has_prev = params.image_index > 0;
+					bool has_next = params.image_count-1 > params.image_index;
+					std::wstring portrait_href(L"?img="); }}>
+				<a(href='&{{ has_prev ? (portrait_href+std::to_wstring(params.image_index-1)) : L"" }}&') <img#prev_portrait_nav(&{{
+					has_prev ? L"src='/static/prev_portrait_btn.png' class='prev_nav nav_enabled' alt='previous image'"
+					         : L"src='/static/prev_portrait_placeholder.png' class='prev_nav nav_disabled'"}}&)
+				&/* TODO(cwajh): inline quote escaping for the title thingy? can it be auto from being inside the () block? */&
+				/>><img#muse_portrait(src='&{{ params.image_url }}&' title="&{{ params.image_tooltip }}&" alt="&{{ params.image_alt }}&")
+				/><a(href='&{{ has_next ? (portrait_href+std::to_wstring(params.image_index+1)) : L"" }}&') <img#next_portrait_nav(&{{
+					has_next ? L"src='/static/next_portrait_btn.png' class='next_nav nav_enabled' alt='next image'"
+					         : L"src='/static/next_portrait_placeholder.png' class='next_nav nav_disabled'"}}&) />>
+
+			>
+
+			<div#muse_profile &{{ params.description }}& >
+			<dl.stat_sheet#major_stats
+				&&	for (auto trait : params.major_traits) {
+				<dt.stat_name &{{ trait.first }}&> <dd.stat_value &{{ trait.second }}&>
+				&&	}
+			>
+		>
+		< div#minor_pane
+			< dl.stat_sheet#minor_stats
+				<{{ for (auto trait : params.minor_traits) { }}>
+				<dt.stat_name &{{ trait.first }}&> <dd.stat_value &{{ trait.second }}&>
+				<{{ } }}>
+			>
+		>
+	>
+>
