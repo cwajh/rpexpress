@@ -12,21 +12,25 @@ create table muns (
 	-- contact info?
 );
 create table muses (
-	muse_id uuid primary key
+	muse_id uuid primary key,
 	username varchar(20), --indexed
 	name varchar(100),
-	short_description clob,
-	mun uuid references muns(mun),
+	short_description text,
+	mun uuid references muns(mun_id),
 	default_avatar uuid,
 	p2p_acl uuid,
 	front_page uuid
 );
-create table muse_traits {
+
+create type trait_type as enum ('major','minor');
+create table muse_traits (
 	trait_id uuid primary key,
-	muse uuid,
-	trait_name varchar(250),
-	trait_value clob
-}
+	pos int,
+	muse uuid references muses(muse_id),
+	category trait_type,
+	name varchar(250),
+	value text
+);
 create table starters (
 	starter_id uuid primary key,
 	top_post uuid,
@@ -51,7 +55,7 @@ create table posts (
 	thread uuid, -- nil for starter post
 	muse uuid,
 	avatar uuid,
-	body clob, -- text?
+	body text, -- text?
 	style tinyint -- enum: normal, speechbubble
 );
 create table chats (
@@ -73,7 +77,7 @@ create table messages (
 	chat uuid,
 	mun uuid references muns(mun),
 	userpic uuid,
-	message clob
+	message text
 );
 create table page (
 	page_id uuid,
@@ -81,7 +85,7 @@ create table page (
 	comm_anchor uuid,
 	muse_anchor uuid,
 	mun_anchor uuid references muns(mun),
-	content clob
+	content text
 );
 -- If the ACL's mode is allow, then allowed entries are allowed, else denied entries are denied, else allow.
 -- If the ACL's mode is deny, then denied entries are denied, else allowed entries are allowed, else deny.
@@ -112,10 +116,15 @@ create table muse_acl (
 --	-- may decide in the future to make comm membership/adminship ACL-based but seems unnecessary?
 --);
 
+create table static_resource (
+	hash char(43) primary key, -- sha256 base64
+	extension varchar(4)
+);
 
 create table avatars (
 	avatar_id uuid,
 	muse uuid,
+	image char(43) references static_resource(hash),
 	position int,
 	option_text varchar(40),
 	tooltip_text varchar(140),
@@ -125,6 +134,7 @@ create table avatars (
 create table userpics (
 	userpic_id uuid,
 	mun uuid references muns(mun),
+	image char(43) references static_resource(hash),
 	position int,
 	option_text varchar(40),
 	tooltip_text varchar(140),
@@ -133,3 +143,12 @@ create table userpics (
 );
 
 
+create table art (
+	art_id uuid,
+	muse uuid references muses(muse_id),
+	image char(43) references static_resource(hash),
+	position int,
+	tooltip_text varchar(140),
+	fallback_text varchar(140),
+	description text
+);

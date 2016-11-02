@@ -6,6 +6,8 @@ import os.path
 import sys
 import string
 import shutil
+import urllib.parse
+import json
 
 url_safe_characters = string.ascii_letters + string.digits + '.~_-'
 
@@ -15,6 +17,7 @@ parser.add_argument('files', metavar='FILE', nargs='+', help='Copal files to be 
 #parser.add_argument('-o','--output', dest='output', default=None,
 #	help='Output file for generated document. If not provided, will output to FILE.html where FILE is the first input file.')
 parser.add_argument('-s','--source', action='append', help="Additional sourcefiles to include.", default=[])
+parser.add_argument('-p','--request_path', help='Request path (like "/path/to/some.api?a=b") to pretend was requested.')
 args = parser.parse_args()
 
 with tempfile.TemporaryDirectory() as compile_dir:
@@ -36,9 +39,8 @@ with tempfile.TemporaryDirectory() as compile_dir:
 
 struct request_context {
 	pqxx::transaction<> *p_transaction;
-	std::string path;
-	std::multimap<std::string, std::string> get;
-	std::multimap<std::string, std::string> post;
+	std::wstring path;
+	std::multimap<std::wstring, std::wstring> get;
 };
 
 int main(int argc, char *argv[]) {
@@ -46,9 +48,15 @@ int main(int argc, char *argv[]) {
 	std::wcout.imbue(std::locale());
 	pqxx::connection db_conn("dbname=rpexpress");
 	pqxx::work xact(db_conn, "inline");
-	struct request_context ctx = {&xact, ""};
+	struct request_context ctx = {&xact, L""};
+""")
+		if args.request_path:
+			cc_file.write("	ctx.path = L%s;\n"%json.dumps(args.request_path))
+			url_bits = urllib.parse.urlparse(args.request_path)
+			for k, v in urllib.parse.parse_qsl(url_bits.query):
+				cc_file.write("	ctx.get[L%s] = L%s;\n"%(json.dumps(k), json.dumps(v)))
 
-	std::map<std::string, std::string> headers; //unused
+		cc_file.write("""	std::map<std::string, std::string> headers; //unused
 	auto params = copal::singleton::gen_headers(ctx, headers);
 	copal::singleton::gen_html(std::wcout, params);
 	return 0;

@@ -1,6 +1,6 @@
 LOCALD = /home/rpexpress/local
 
-top.fcgi: genpaths_fcgi.cc copal_headers paths/cplpaths.hh cwajh.hh request_context.hh
+top.fcgi: genpaths_fcgi.cc copal_headers copal_paths cwajh.hh request_context.hh
 	g++ --std=c++1y -I"$PWD" -I$(LOCALD)/include -I. -L$(LOCALD)/lib \
 		-lpqxx -lboost_thread-mt -lboost_system-mt -pthread \
 		-lboost_date_time-mt genpaths_fcgi.cc $(LOCALD)/lib/libfastcgipp.a \
@@ -9,7 +9,7 @@ top.fcgi: genpaths_fcgi.cc copal_headers paths/cplpaths.hh cwajh.hh request_cont
 copal_headers:
 	cd copal && make all
 
-paths/cplpaths.hh:
+copal_paths:
 	cd paths && make cplpaths.hh
 
 clean_copal:
