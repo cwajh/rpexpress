@@ -1,0 +1,54 @@
+
+==TOTAL LACK OF WARRANTIES==
+
+This site is provided "as is". In other words:
+* It might not meet your use case or your expectations.
+* It might not be accurate or reliable.
+* It might be unavailable, buggy, or slow.
+* Security breaches might occur.
+In other words, while we *want* to make this a useful venue, we can't *promise* you much, and we aren't making any sort of warranty.
+Let's repeat that: the site has no warranty of any kind, explicit or implicit.
+* There's no warranty that the site will even do the basic job it claims to do.
+* Nor be fitting for any particular purpose.
+To the extent that there's risk, you need to accept that risk - and responsibility for recovering from it - yourself.
+You need to accept that we won't be liable to you if:
+* Something about the site causes you damages or harms you (even if we knew those damages were possible).
+* Someday you can no longer access it.
+* You get in trouble for your use of the site or for the stuff you post here.
+If you're taking legal risks by using our site, sorry, but you need to agree to face those risks alone.
+
+==RIGHTS TO CONTENT==
+
+In order to make the platform work, we need to take your posts and repackage them for others to see. In order to do that, we need certain 
+legal rights.
+
+If you want to post content on this site, you must agree to give us a world-wide, royalty-free, nonexclusive license to make that content 
+available. That includes distributing, reproducing, performing, displaying, and compiling, plus modifying and adapting the content's format, 
+presentation, and metadata.
+
+We intend to give you some control of how your content is presented by default, but we will also give other users control of how content is 
+presented to them.
+
+
+==YOUR PRIVACY==
+
+We collect info about the computers that visit our site, so that we can fix problems and get an idea of who (in general) is using the site.
+
+We collect info that you upload, so that we can display it to other users, moderate, get in touch with you, and make the site work.
+
+We use cookies to remember user log-ins and settings.
+
+==MISCELLANEOUS==
+
+Don't use this site to do anything that's illegal where you live, nor illegal where we live (California, USA).
+
+Don't use this site if you're under 13. There's legal reasons for this - strict requirements for how websites have to treat people under 
+13, which would be too hard for us to implement.
+
+A link to something from this site doesn't imply that we endorse it or have anything to do with it. This should be common sense.
+
+Please understand that, while we intend to excise harmful content, we aren't obligated to do it; we reserve the right to moderate (or not 
+moderate) however we wish. We don't pre-screen content, so there's no certainty that harmful content will be excised before you have a chance 
+to see (& be harmed by) it. Sorry.
+
+

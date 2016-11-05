@@ -1,0 +1,20 @@
+
+It is site policy to require warnings for certain kinds of content.
+This - like all site policy - is an attempt to mitigate harm.
+Certain topics are especially likely to reopen old wounds.
+Certain topics are especially likely to attract negative outside attention.
+If we clearly mark such content, the site can be careful about who sees it; that way, the risk is mostly mitigated.
+
+In order for required warnings be useful, they need to have a consistent meaning.
+There's some disagreement within the RP community as to how terms like "non-con" or "underage" should be defined.
+/It is site policy to define them broadly./
+We do this because warnings are tools to minimize harm, not a mark of shame.
+If they're tools to minimize harm, they've got to make sure that the content which *needs* to carry the warning, *does*.
+Even if it means that a lot of the gray area is caught too.
+If you think the warning is misleading, you can provide extra context in your warning notes.
+If you think the warning would spoil a twist, you can mark it as such, and the site will be careful about how the warning is displayed.
+But the presence of the warning itself is non-negotiable.
+
+Also, as a reminder: there is a global ban on content that is illegal or probably illegal for us to host.
+Warnings can't mitigate legal risk.
+
