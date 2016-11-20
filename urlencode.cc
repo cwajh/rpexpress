@@ -62,7 +62,7 @@ std::map<std::string, std::string> map_for_query_string(const std::string &query
 	return kv;
 }
 
-std::string query_string_for_map(std::map<std::string, std::string> key_values) {
+std::string query_string_for_map(std::map<std::string, std::string> &key_values) {
 	std::string query_string;
 	for(auto&& kv_pair : key_values) {
 		query_string.append(urlencode(kv_pair.first));
