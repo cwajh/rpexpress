@@ -25,17 +25,19 @@
 
 */
 
+// Altered for rpexpress to do websafe (-_. style) base64.
+
 #include "base64.hh"
 #include <iostream>
 
 static const std::string base64_chars = 
              "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
              "abcdefghijklmnopqrstuvwxyz"
-             "0123456789+/";
+             "0123456789-_";
 
 
 static inline bool is_base64(unsigned char c) {
-  return (isalnum(c) || (c == '+') || (c == '/'));
+  return (isalnum(c) || (c == '-') || (c == '_'));
 }
 
 std::string base64_encode(unsigned char const* bytes_to_encode, unsigned int in_len) {
@@ -73,7 +75,7 @@ std::string base64_encode(unsigned char const* bytes_to_encode, unsigned int in_
       ret += base64_chars[char_array_4[j]];
 
     while((i++ < 3))
-      ret += '=';
+      ret += '.';
 
   }
 
@@ -89,7 +91,7 @@ std::string base64_decode(std::string const& encoded_string) {
   unsigned char char_array_4[4], char_array_3[3];
   std::string ret;
 
-  while (in_len-- && ( encoded_string[in_] != '=') && is_base64(encoded_string[in_])) {
+  while (in_len-- && ( encoded_string[in_] != '.') && is_base64(encoded_string[in_])) {
     char_array_4[i++] = encoded_string[in_]; in_++;
     if (i ==4) {
       for (i = 0; i <4; i++)
