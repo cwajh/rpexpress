@@ -1,6 +1,7 @@
 #include "session.hh"
 
 #include "cwajh.hh"
+#include "base64.hh"
 #include "keys.hh"
 #include "urlencode.hh"
 #include <crypto++/sha3.h>
@@ -9,10 +10,11 @@
 using namespace std::chrono_literals;
 static const std::wstring SESSION_MAC_COOKIE(L"SESS_MAC");
 static const std::wstring SESSION_COOKIE(L"SESS_DATA");
-static const std::chrono::duration COOKIE_LIFESPAN(2190h));
+static const std::chrono::hours COOKIE_LIFESPAN(2190h);
 
 bool mac_valid_for_string(const std::string &mac, const byte salt[32], const std::string &cookie) {
-	if(mac.length() != 32) {
+	const std::string bin_mac = base64_decode(mac);
+	if(bin_mac.length() != 32) {
 		// Invalid. Should be a SHA3-256 hash.
 		return false;
 	}
@@ -20,8 +22,8 @@ bool mac_valid_for_string(const std::string &mac, const byte salt[32], const std
 	// Chose SHA3 b/c it isn't subject to length-extension attacks (makes MAC schedule easier).
 	CryptoPP::SHA3_256 hash;
 	hash.Update(salt, 32);
-	hash.Update(cookie.c_str(), cookie.length());
-	if(!hash.Verify(mac.c_str())) {
+	hash.Update((const unsigned char*)cookie.c_str(), cookie.length());
+	if(!hash.Verify((const unsigned char*)bin_mac.c_str())) {
 		// Invalid. Cookie seems tampered with.
 		return false;
 	}
@@ -30,32 +32,32 @@ bool mac_valid_for_string(const std::string &mac, const byte salt[32], const std
 }
 
 std::string salted_mac_for_string(const byte salt[32], const std::string &cookie) {
-	char mac[32];
+	unsigned char mac[32];
 	CryptoPP::SHA3_256 hash;
-	hash.Update(COOKIE_SALT, sizeof(COOKIE_SALT));
-	hash.Update(session_cookie.c_str(), session_cookie.length());
+	hash.Update(salt, 32);
+	hash.Update((const unsigned char*)cookie.c_str(), cookie.length());
 	hash.Final(&mac[0]);
 	return base64_encode(mac,32);
 }
 
 
 
-std::map<std::wstring, std::wstring> session_data_for_cookies(const std::map<std::wstring, std::wstring> &cookies){
-	std::string received_mac = w2s(cookies.get(SESSION_MAC_COOKIE));
-	std::string cookie = w2s(cookies.get(SESSION_COOKIE));
+std::map<std::string, std::string> session_data_for_cookies(const std::map<std::wstring, std::wstring> &cookies){
+	const std::string received_mac = w2s(cookies.at(SESSION_MAC_COOKIE));
+	const std::string cookie = w2s(cookies.at(SESSION_COOKIE));
 
-	if(!mac_valid_for_string(received_mac, cookie)) {
-		std::map<std::wstring, std::wstring> nothing;
+	if(!mac_valid_for_string(received_mac, COOKIE_SALT, cookie)) {
+		std::map<std::string, std::string> nothing;
 		return nothing;
 	}
 
 	return map_for_query_string(cookie);
 }
 
-std::vector<std::pair<std::string, std::string>> headers_for_session_data(const std::map<std::wstring, std::wstring> &session_data) {
-	std::string session_cookie = query_string_for_map(session_data);
+std::vector<std::pair<std::wstring, std::wstring>> headers_for_session_data(const std::map<std::string, std::string> &session_data) {
+	const std::string session_cookie = query_string_for_map(session_data);
 
-	std::string b64_mac = salted_mac_for_string(COOKIE_SALT, session_cookie);
+	const std::string b64_mac = salted_mac_for_string(COOKIE_SALT, session_cookie);
 
 	auto expiration_point = std::chrono::system_clock::now() + COOKIE_LIFESPAN;
 	std::time_t expiration_time = std::chrono::system_clock::to_time_t(expiration_point);
@@ -63,12 +65,20 @@ std::vector<std::pair<std::string, std::string>> headers_for_session_data(const 
 	// A small injustice, but still.
 	// Anyway, POSIX requires gmtime_r so it should be fine?
 	std::tm expiration_tm;
-	char expiration_buffer[32];
-	gmtime_r(&expiration_time, &ugh);
-	strftime(buffer, 32, "%a, %d %b %Y %H:%M:%S GMT", &ugh);
+	char expiration_buffer[32] = {'\0'};
+	gmtime_r(&expiration_time, &expiration_tm);
+	strftime(expiration_buffer, 32, "%a, %d %b %Y %H:%M:%S GMT", &expiration_tm);
+	std::string expiration_string(expiration_buffer);
 
-	// XXX(cwajh)
-	std::vector<std::pair<std::string, std::string>> headers;
-	headers.push_back({"Set-Cookie", ""})
+	std::vector<std::pair<std::wstring, std::wstring>> headers;
+	headers.push_back({L"Set-Cookie",
+		SESSION_MAC_COOKIE + L"=" + s2w(b64_mac)
+		+ L"; Expires=" + s2w(expiration_string)
+		+ L"; SameSite=Lax; HttpOnly"});
+	headers.push_back({L"Set-Cookie",
+		SESSION_COOKIE + L"=\"" + s2w(session_cookie)
+		+ L"\"; Expires=" + s2w(expiration_string)
+		+ L"; SameSite=Lax; HttpOnly"});
+	return headers;
 }
 
