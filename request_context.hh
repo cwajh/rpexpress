@@ -8,4 +8,5 @@ struct request_context {
 	pqxx::transaction<> *p_transaction;
 	std::wstring path;
 	std::map<std::wstring, std::wstring> get;
+	std::map<std::string, std::string> session;
 };

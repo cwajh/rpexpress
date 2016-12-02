@@ -41,6 +41,7 @@ struct request_context {
 	pqxx::transaction<> *p_transaction;
 	std::wstring path;
 	std::multimap<std::wstring, std::wstring> get;
+	std::map<std::string, std::string> session;
 };
 
 int main(int argc, char *argv[]) {
