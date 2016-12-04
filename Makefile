@@ -1,8 +1,9 @@
 LOCALD = /home/rpexpress/local
 
 top.fcgi: genpaths_fcgi.cc copal_headers copal_paths cwajh.hh request_context.hh
-	g++ --std=c++1y -I"$PWD" -I$(LOCALD)/include -I. -L$(LOCALD)/lib \
-		-lpqxx -lboost_thread-mt -lboost_system-mt -pthread \
+	g++ --std=c++1y -I$(PWD) -I$(LOCALD)/include -I. -L$(LOCALD)/lib \
+		-lpqxx -lboost_thread-mt -lboost_system-mt -pthread -lcryptopp \
+		session.cc urlencode.cc base64.cc keys.cc \
 		-lboost_date_time-mt genpaths_fcgi.cc $(LOCALD)/lib/libfastcgipp.a \
 		-o top.fcgi
 

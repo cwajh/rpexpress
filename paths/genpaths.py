@@ -41,6 +41,12 @@ r"""		if(std::regex_match(ctx.path, path%(lineno)d)){
 				out << s2w(header.second);
 				out << "\r\n";
 			}
+			for(auto &header : headers_for_session_data(ctx.session)) {
+				out << header.first;
+				out << ": ";
+				out << header.second;
+				out << "\r\n";
+			}
 			out << "\r\n";
 			copal::%(module)s::gen_html<Output,decltype(params)>(out,params);
 			return;
@@ -48,6 +54,7 @@ r"""		if(std::regex_match(ctx.path, path%(lineno)d)){
 """%{'lineno':lineno,'module':module})
 print ('#include <regex>')
 print ('#include <cwajh.hh>')
+print ('#include <session.hh>')
 for import_stmt in imports:
 	print (import_stmt)
 print ("namespace cplpaths {")

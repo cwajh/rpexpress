@@ -20,17 +20,23 @@ void error_log(const char* msg)
       error.imbue(std::locale(error.getloc(), new posix_time::time_facet()));
    }
    error << '[' << posix_time::second_clock::local_time() << "] " << msg << endl;
+   error.flush();
 }
 class TopServlet: public Fastcgipp::Request<wchar_t>
 {
    bool response()
    {
-      struct request_context ctx;
       pqxx::connection db_conn("dbname=rpexpress");
       pqxx::work request_xact(db_conn, "request");
-      ctx.p_transaction = &request_xact;
-      ctx.path = environment().scriptName;
-      ctx.get = environment().gets;
+      struct request_context ctx = {
+        &request_xact,
+        environment().scriptName,
+        environment().gets,
+        session_data_for_cookies(environment().cookies)
+      };
+      //ctx.p_transaction = &request_xact;
+      //ctx.path = environment().scriptName;
+      //ctx.get = environment().gets;
       //ctx.post = environment().posts;
 
       std::map<std::string, std::string> headers;
@@ -39,6 +45,13 @@ class TopServlet: public Fastcgipp::Request<wchar_t>
          out << s2w(header.first);
          out << ": ";
          out << s2w(header.second);
+         out << "\r\n";
+      }
+
+      for(auto &header : headers_for_session_data(ctx.session)) {
+         out << header.first;
+         out << ": ";
+         out << header.second;
          out << "\r\n";
       }
       out << "\r\n";
@@ -54,7 +67,20 @@ class TopServlet: public Fastcgipp::Request<wchar_t>
       out << "Runic English?: " << runic << "<br />";
       out << "</body></html>";
       */
+
       err << "Hello apache error log";
+
+	/// XXX(cwajh)
+	out << L"<!--" << std::to_wstring((long long) &ctx.session);
+      for(auto &session_var : ctx.session) {
+	out << "X-CPL-";
+	out << session_var.first;
+         out << ": ";
+         out << session_var.second;
+         out << "\r\n";
+      }
+	out << L"-->" << endl;
+
       return true;
    }
 };

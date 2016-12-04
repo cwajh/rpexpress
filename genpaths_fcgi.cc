@@ -8,6 +8,7 @@
 #include "request_context.hh"
 #include "cwajh.hh"
 #include "paths/cplpaths.hh"
+#include "session.hh"
 
 void error_log(const char* msg)
 {
@@ -29,14 +30,14 @@ class TopServlet: public Fastcgipp::Request<wchar_t>
    }
    bool response()
    {
-      struct request_context ctx;
       pqxx::work request_xact(*db_conn(), "request");
-      ctx.p_transaction = &request_xact;
-      // simply using scriptName leaves out later bits of the path. no good!
-      ctx.path = strip_query(environment().requestUri);
-      ctx.get = environment().gets;
-      //error_log(environment().scriptName);
-      //ctx.post = environment().posts;
+      struct request_context ctx = {
+        &request_xact,
+        // simply using scriptName leaves out later bits of the path. no good!
+        strip_query(environment().requestUri),
+        environment().gets,
+        session_data_for_cookies(environment().cookies)
+      };
 
       cplpaths::gen_response<Fastcgipp::Fcgistream<wchar_t>, struct request_context>(out, ctx);
       return true;

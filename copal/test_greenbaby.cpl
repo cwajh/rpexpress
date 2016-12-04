@@ -22,6 +22,16 @@ GEN_HEADERS
 
 		out_phrases.push_back(phrase);
 	}
+	auto p_visit_count = env.session.find("visit_count");
+	int visit_count = 0;
+	if (p_visit_count != env.session.end()) {
+		try {
+			visit_count = std::stoi(p_visit_count->second);
+		} catch (const std::invalid_argument&) {}
+	}
+	visit_count++;
+	env.session["visit_count"] = std::to_string(visit_count);
+	out_phrases.push_back({std::wstring(L"This is visit number ") + std::to_wstring(visit_count), 99});
 	return out_phrases;
 END_GEN_HEADERS
 }}>

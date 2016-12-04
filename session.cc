@@ -43,8 +43,17 @@ std::string salted_mac_for_string(const byte salt[32], const std::string &cookie
 
 
 std::map<std::string, std::string> session_data_for_cookies(const std::map<std::wstring, std::wstring> &cookies){
-	const std::string received_mac = w2s(cookies.at(SESSION_MAC_COOKIE));
-	const std::string cookie = w2s(cookies.at(SESSION_COOKIE));
+	std::string received_mac;
+	auto cookie_field = cookies.find(SESSION_MAC_COOKIE);
+	if (cookie_field != cookies.end()) {
+		received_mac = w2s(cookie_field->second);
+	}
+
+	std::string cookie;
+	cookie_field = cookies.find(SESSION_COOKIE);
+	if (cookie_field != cookies.end()) {
+		cookie = w2s(cookie_field->second);
+	}
 
 	if(!mac_valid_for_string(received_mac, COOKIE_SALT, cookie)) {
 		std::map<std::string, std::string> nothing;
@@ -76,8 +85,8 @@ std::vector<std::pair<std::wstring, std::wstring>> headers_for_session_data(cons
 		+ L"; Expires=" + s2w(expiration_string)
 		+ L"; SameSite=Lax; HttpOnly"});
 	headers.push_back({L"Set-Cookie",
-		SESSION_COOKIE + L"=\"" + s2w(session_cookie)
-		+ L"\"; Expires=" + s2w(expiration_string)
+		SESSION_COOKIE + L"=" + s2w(session_cookie)
+		+ L"; Expires=" + s2w(expiration_string)
 		+ L"; SameSite=Lax; HttpOnly"});
 	return headers;
 }
