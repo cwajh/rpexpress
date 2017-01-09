@@ -10,6 +10,7 @@ In other words, while we *want* to make this a useful venue, we can't *promise* 
 Let's repeat that: the site has no warranty of any kind, explicit or implicit.
 * There's no warranty that the site will even do the basic job it claims to do.
 * Nor be fitting for any particular purpose.
+* And we're explicitly disclaiming any other warranties you may have assumed were in effect.
 To the extent that there's risk, you need to accept that risk - and responsibility for recovering from it - yourself.
 You need to agree that you won't hold us liable if:
 * Something about the site causes you damages or harms you (even if we knew those damages were possible).
