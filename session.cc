@@ -11,6 +11,7 @@ using namespace std::chrono_literals;
 static const std::wstring SESSION_MAC_COOKIE(L"SESS_MAC");
 static const std::wstring SESSION_COOKIE(L"SESS_DATA");
 static const std::chrono::hours COOKIE_LIFESPAN(2190h);
+static const std::string SESSION_ID("__SESS_ID");
 
 bool mac_valid_for_string(const std::string &mac, const byte salt[32], const std::string &cookie) {
 	const std::string bin_mac = base64_decode(mac);
@@ -91,3 +92,15 @@ std::vector<std::pair<std::wstring, std::wstring>> headers_for_session_data(cons
 	return headers;
 }
 
+void reset_session_identifier(std::map<std::string, std::string> &session_data) {
+	// TODO(cwajh): use some random number thing instead of this.
+	std::time_t sess_time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+	session_data[SESSION_ID] = std::to_string(sess_time);
+}
+
+std::string session_identifier(std::map<std::string, std::string> &session_data) {
+	if(session_data.find(SESSION_ID) == session_data.end()) {
+		reset_session_identifier(session_data);
+	}
+	return session_data[SESSION_ID];
+}

@@ -247,12 +247,20 @@ def gen_header_body(name,input,doctype, base_indent = 0):
 
 	header = """#define GEN_HEADERS namespace copal{namespace %(name)s { template<typename Environment> static auto _gen_headers(Environment& env, std::map<std::string, std::string>& headers) { headers["Content-Type"] = "text/html; charset=utf-8";
 #define END_GEN_HEADERS } }}
+#define PERFORM_POST namespace copal{namespace %(name)s {template<typename Environment, typename File> static std::wstring _perform_post (Environment& env, const std::map<std::wstring, std::wstring> &fields, const std::map<std::wstring, File> &files) {
+#define END_PERFORM_POST } }}
+#define ON_BAD_POST namespace copal{namespace %(name)s {template<typename Environment, typename File> static std::wstring _on_bad_post (Environment& env, const std::map<std::wstring, std::wstring> &fields, const std::map<std::wstring, File> &files) {
+#define END_BAD_POST } }}
 #define CPL_NAMESPACED namespace copal{namespace %(name)s {
 #define CPL_END_NAMESPACED }}
 /* header declarations for %(name)s */
 """+header+'\n'+"""/* end header for %(name)s */
 #undef GEN_HEADERS
 #undef END_GEN_HEADERS
+#undef PERFORM_POST
+#undef END_PERFORM_POST
+#undef ON_BAD_POST
+#undef END_BAD_POST
 #undef CPL_NAMESPACED
 #undef CPL_END_NAMESPACED
 """
@@ -267,6 +275,14 @@ def gen_header_body(name,input,doctype, base_indent = 0):
 template<typename Environment>
 inline auto gen_headers(Environment& env, std::map<std::string, std::string>& headers) {
 	return _gen_headers<Environment>(env, headers);
+}
+template<typename Environment, typename File>
+inline std::wstring perform_post(Environment& env, const std::map<std::wstring, std::wstring> &fields, const std::map<std::wstring, File> &files) {
+	return _perform_post<Environment,File>(env,fields,files);
+}
+template<typename Environment, typename File>
+inline std::wstring handle_bad_post(Environment& env, const std::map<std::wstring, std::wstring> &fields, const std::map<std::wstring, File> &files) {
+	return _on_bad_post<Environment,File>(env,fields,files);
 }
 
 template<typename Output, typename Params>
@@ -293,6 +309,12 @@ namespace copal {
 	static constexpr nothing_t nothing;
 	template<typename Environment> static nothing_t _gen_headers(Environment& env, std::map<std::string, std::string>& headers) {
 		headers["Content-Type"] = "text/html; charset=utf-8";
+	}
+	template<typename Environment, typename File> static std::wstring _perform_post(Environment& env, const std::map<std::wstring, std::wstring> &fields, const std::map<std::wstring, File> &files) {
+		return L"";
+	}
+	template<typename Environment, typename File> static std::wstring _on_bad_post(Environment& env, const std::map<std::wstring, std::wstring> &fields, const std::map<std::wstring, File> &files) {
+		return L"";
 	}
 }
 #endif /* COPAL_AUTOGEN_COMMON_DECLARATIONS */
