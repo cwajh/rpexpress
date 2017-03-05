@@ -113,12 +113,7 @@ END_GEN_HEADERS
 		<title &{{ params.muse_name }}&>
 	>
 	< body.doc_with_major_pane
-		< nav#intramuse_nav	<ul#intramuse_nav_list
-			<li.intramuse_nav_item#muse_info_nav <a(href='info.html') info>>
-			<li.intramuse_nav_item#muse_gallery_nav <a(href='gallery.html') gallery>>
-			<li.intramuse_nav_item#muse_qna_nav <a(href='askblog.html') q&amp;a>>
-			<li.intramuse_nav_item#muse_threads_nav <a(href='threads.html') threads>>
-		> >
+		<@include nav_bar params@>
 		< div#major_pane
 
 			< h1#muse_name &{{ params.muse_name }}&>

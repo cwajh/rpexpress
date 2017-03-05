@@ -23,4 +23,4 @@ clean: clean_copal clean_paths
 	rm top.fcgi
 
 install:
-	cp top.fcgi ~/testing.fcgi
+	killall testing.fcgi; cp top.fcgi ~/testing.fcgi

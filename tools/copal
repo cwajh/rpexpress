@@ -6,6 +6,8 @@ from pyparsing import QuotedString, Regex, ZeroOrMore, LineEnd, Literal, Forward
 import re
 import os
 
+import sys
+
 def wrap_as_lstring(s):
 	escaped_txt = s.encode('unicode-escape').decode().replace('"', '\\"')
 	return 'L"%s"'%escaped_txt
@@ -41,6 +43,8 @@ class CopalNode:
 		return False
 	def has_nonwhite_content(self):
 		return True
+	def dependencies(self):
+		return []
 
 class CommentNode(CopalNode):
 	def __init__(self, parsed_string, location, tokens):
@@ -77,6 +81,20 @@ class CLineNode(CopalNode):
 		return txt
 	def headerable(self):
 		return True
+
+class IncludeDirectiveNode(CopalNode):
+	def pretty_string(self, inline=False, indent=0):
+		txt = '\tcopal::%s::gen_fragment(out, (%s), util);'%(self.tokens[0], self.tokens[1])
+		if inline:
+			txt = "std::endl;\n" + txt + ";\n\tout"
+		return txt
+	def dependencies(self):
+		return ['#include "%s.hh"'%self.tokens[0]]
+		# TODO(cwajh): less brittle? what guarantees should I make about includability?
+#"""namespace copal { namespace %s {
+#	// Forward declaration.
+#	template<typename Output, typename Params, typename UtilityHelper> inline void gen_fragment(Output& out, Params& params, UtilityHelper &util);
+#}}"""%self.tokens[0]]
 
 class PlaintextNode(CopalNode):
 	def inner_string(self):
@@ -137,6 +155,10 @@ class TagDefNode(CopalNode):
 			parts.append('L" "')
 			parts += [q.pretty_string(inline=True) for q in self.attributes]
 		return " << ".join(q for q in parts if q is not None)
+	def dependencies(self):
+		if self.attributes:
+			return sum((q.dependencies() for q in self.attributes),[])
+		return []
 
 class TagNode(CopalNode):
 	def __init__(self, parsed_string, location, tokens):
@@ -183,11 +205,22 @@ class TagNode(CopalNode):
 			return whole
 		else:
 			return '\tout << L"%s" << %s << std::endl;\n'%( "\\t" * indent, whole)
+	def dependencies(self):
+		return self.definition.dependencies() + sum((q.dependencies() for q in self.contents),[])
 
 def parse_func(element_name, idx_range=slice(None)):
 	"""Generic method to create holder objects for meaningful parsed tokens"""
 	namedtuple_class = namedtuple(element_name,['contents','name'])
 	return lambda parsed_string, location, tokens: namedtuple_class(tokens[idx_range], element_name)
+
+def directive_parse_action(parsed_string, location, tokens):
+	"""Takes the parsed elements of a Directive and returns the proper Directive."""
+	inner_text = tokens[0].strip()
+	directive_name = inner_text.split(None,1)[0]
+	assert(directive_name in ['include'])
+	if directive_name == 'include':
+		arguments = inner_text.split(None,2)[1:]
+		return IncludeDirectiveNode(parsed_string, location, arguments)
 
 def tag_parse_action(parsed_string, location, tokens):
 	"""Takes the parsed elements of a Tag and returns a Tag"""
@@ -202,6 +235,7 @@ Whitespace = Regex('\s+')
 BlockComment = QuotedString('&/*', endQuoteChar='*/&', multiline=True).setParseAction(CommentNode)
 CExpr        = QuotedString('&{{', endQuoteChar='}}&', multiline=True).setParseAction(CExprNode)
 CBlock       = QuotedString('<{{', endQuoteChar='}}>', multiline=True).setParseAction(CBlockNode)
+Directive    = QuotedString('<@', endQuoteChar='@>', multiline=True).setParseAction(directive_parse_action)
 
 LineComment = (Literal('&//') + NonEoL + LineEnd()).setParseAction(CommentNode)
 CLine = (Literal('&&') + NonEoL + LineEnd()).setParseAction(CLineNode)
@@ -211,7 +245,7 @@ PlaintextNoTrailingSlash = Regex(r'((([^&<>])|(&[^&/{]))*(([^/&<>])|(&[^&/{])))?
 # Difference: )s aren't allowed
 AttributeText = Regex(r'(([^&<>)])|(&[^&/{]))*').setParseAction(PlaintextNode)
 
-BasicTagless = Plaintext + ZeroOrMore( (LineComment | BlockComment | CExpr | CBlock | CLine) + Plaintext )
+BasicTagless = Plaintext + ZeroOrMore( (LineComment | BlockComment | CExpr | Directive | CBlock | CLine) + Plaintext )
 
 Fragment = Forward()
 
@@ -220,7 +254,7 @@ CSSName = Regex(r'-?[_a-zA-Z][_a-zA-Z0-9-]*')
 CSSClass = (Literal('.') + CSSName).setParseAction(parse_func("CSSClass",1))
 CSSIdent = (Literal('#') + CSSName).setParseAction(parse_func("CSSIdent",1))
 
-TagAttributes = (Literal('(') + AttributeText + ZeroOrMore( (CExpr | CBlock) + AttributeText ) + Literal(')')).setParseAction(parse_func("TagAttributes",slice(1,-1)))
+TagAttributes = (Literal('(') + AttributeText + ZeroOrMore( (CExpr | Directive | CBlock) + AttributeText ) + Literal(')')).setParseAction(parse_func("TagAttributes",slice(1,-1)))
 TagDefinition = (TagName + ZeroOrMore(CSSClass) + Optional(CSSIdent + ZeroOrMore(CSSClass)) + Optional(TagAttributes)).setParseAction(TagDefNode)
 
 FragmentWithoutEatingTrailingSlash = MatchFirst(
@@ -229,8 +263,8 @@ FragmentWithoutEatingTrailingSlash = MatchFirst(
 )
 Tag = (Regex('<\s*') + TagDefinition + Whitespace + FragmentWithoutEatingTrailingSlash + Regex(r'/?>')).setParseAction(TagNode)
 
-Fragment << (ZeroOrMore( Plaintext + (LineComment | BlockComment | CExpr | CBlock | CLine | Tag) ) + PlaintextNoTrailingSlash)
-DocumentFragment = OneOrMore( Plaintext + (LineComment | BlockComment | CExpr | CBlock | CLine | Tag) ) + PlaintextNoTrailingSlash
+Fragment << (ZeroOrMore( Plaintext + (LineComment | BlockComment | CExpr | Directive | CBlock | CLine | Tag) ) + PlaintextNoTrailingSlash)
+DocumentFragment = OneOrMore( Plaintext + (LineComment | BlockComment | CExpr | Directive | CBlock | CLine | Tag) ) + PlaintextNoTrailingSlash
 
 def gen_header_body(name,input,doctype, base_indent = 0):
 	header = ""
@@ -266,12 +300,18 @@ def gen_header_body(name,input,doctype, base_indent = 0):
 """
 	header = header%{'name':name}
 
+	# these need to be outside the scope of copal macros. f'rex, including other copal files
+	top_header = ""
+	for dependency in sum((q.dependencies() for q in top_nodes),[]):
+		sys.stderr.write(repr(dependency))
+		top_header += dependency + '\n';
+
 	doctype_code = ""
 	if doctype:
 		doctype_code = "\tout << %s << std::endl;\n"%wrap_as_lstring("<!DOCTYPE %s>"%(doctype))
 	# remaining nodes form the body.
 	content = "".join(qq for qq in [q.pretty_string(indent=base_indent) for q in top_nodes] if qq)
-	return namedtuple('GHB','header body')(header, """namespace copal { namespace %(name)s {
+	return namedtuple('GHB','top_header header body')(top_header, header, """namespace copal { namespace %(name)s {
 template<typename Environment>
 inline auto gen_headers(Environment& env, std::map<std::string, std::string>& headers) {
 	return _gen_headers<Environment>(env, headers);
@@ -299,6 +339,7 @@ inline void gen_html(Output& out, Params& params, UtilityHelper &util) {
 )
 
 def gen(name, ghbs, src_name=None):
+	top_header = '\n'.join([q.top_header for q in ghbs])
 	header = '\n'.join([q.header for q in ghbs])
 	bodies = '\n'.join([q.body for q in ghbs])
 
@@ -307,6 +348,8 @@ def gen(name, ghbs, src_name=None):
 #define COPAL_AUTOGEN_%(cname)s_HH
 #include <ostream>
 #include <map>
+
+%(top_header)s
 
 #ifndef COPAL_AUTOGEN_COMMON_DECLARATIONS
 #define COPAL_AUTOGEN_COMMON_DECLARATIONS
@@ -329,7 +372,12 @@ namespace copal {
 %(content)s
 
 #endif /* COPAL_AUTOGEN_%(cname)s_HH */
-"""%{'cname':name.upper(), 'autogen':(' from %s'%(src_name.replace('\n','_')) if src_name else ""),'content':header+'\n'+bodies})
+"""%{
+	'cname':name.upper(),
+	'autogen':(' from %s'%(src_name.replace('\n','_')) if src_name else ""),
+	'content':header+'\n'+bodies,
+	'top_header':top_header
+})
 
 def names_for_path(path):
 	dir, filename = os.path.split(path)

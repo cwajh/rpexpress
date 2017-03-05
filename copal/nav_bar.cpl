@@ -1,0 +1,6 @@
+< nav#intramuse_nav	<ul#intramuse_nav_list
+	<li.intramuse_nav_item#muse_info_nav <a(href='info.html') info>>
+	<li.intramuse_nav_item#muse_gallery_nav <a(href='gallery.html') gallery>>
+	<li.intramuse_nav_item#muse_qna_nav <a(href='askblog.html') q&amp;a>>
+	<li.intramuse_nav_item#muse_threads_nav <a(href='threads.html') threads>>
+> >
