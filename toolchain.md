@@ -8,6 +8,8 @@ from a config file (paths/paths.lst).
 Database is currently directly-accessed Postgres. But that will soon become
 some ORM thingy (ODB most likely).
 
+cpl2html and cpl2html_psql are currently broken. Haven't decided their fate.
+
 Makefile works. Invoke the binary with spawn-fcgi and point an nginx at it.
 
 Full list of libraries you will need:
