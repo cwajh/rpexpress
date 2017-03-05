@@ -7,6 +7,7 @@
 #include <pqxx/pqxx>
 #include "request_context.hh"
 #include "cwajh.hh"
+#include "post.hh"
 #include "paths/cplpaths.hh"
 #include "session.hh"
 
@@ -30,6 +31,7 @@ class TopServlet: public Fastcgipp::Request<wchar_t>
    }
    bool response()
    {
+      error_log(w2s(L"Request received: " + environment().requestUri).c_str());
       pqxx::work request_xact(*db_conn(), "request");
       struct request_context ctx = {
         &request_xact,
@@ -38,8 +40,23 @@ class TopServlet: public Fastcgipp::Request<wchar_t>
         environment().gets,
         session_data_for_cookies(environment().cookies)
       };
-
-      cplpaths::gen_response<Fastcgipp::Fcgistream<wchar_t>, struct request_context>(out, ctx);
+      error_log("Handing off to cplpaths");
+      if(environment().requestMethod == Fastcgipp::Http::HTTP_METHOD_POST){
+        std::map<std::wstring, std::wstring> fields;
+        std::map<std::wstring, post_file_t> files;
+        for(auto &post : environment().posts) {
+          if (post.second.type == Fastcgipp::Http::Post<wchar_t>::file) {
+            files[post.first] = {post.second.filename, post.second.contentType};
+          } else {
+            fields[post.first] = post.second.value;
+          }
+        }
+        perform_post<Fastcgipp::Fcgistream<wchar_t>,struct request_context>(out, fields, files, ctx);
+      } else {
+        populate_post_outcome<struct request_context>(ctx);
+        cplpaths::gen_response<Fastcgipp::Fcgistream<wchar_t>, struct request_context>(out, ctx);
+      }
+      error_log("Complete");
       return true;
    }
 };

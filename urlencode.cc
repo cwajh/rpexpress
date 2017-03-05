@@ -10,7 +10,7 @@
 std::string urldecode(const std::string &src) {
     std::string ret;
     char ch;
-    int i, ii;
+    unsigned int i, ii;
     for (i=0; i<src.length(); i++) {
         if (int(src[i])==37) {
             sscanf(src.substr(i+1,2).c_str(), "%x", &ii);
@@ -75,5 +75,21 @@ std::string query_string_for_map(const std::map<std::string, std::string> &key_v
 		query_string.resize(query_string.length() - 1);
 	}
 	return query_string;
+}
+
+std::map<std::wstring, std::wstring> ws_map_for_query_string(const std::string &query_string) {
+	std::map<std::wstring, std::wstring> wide_fields;
+	for (auto &kv : map_for_query_string(query_string)) {
+		wide_fields[s2w(kv.first)] = s2w(kv.second);
+	}
+	return wide_fields;
+}
+
+std::string query_string_for_map(const std::map<std::wstring, std::wstring> &key_values) {
+	std::map<std::string, std::string> utf8_fields;
+	for (auto &kv : key_values) {
+		utf8_fields[w2s(kv.first)] = w2s(kv.second);
+	}
+	return query_string_for_map(utf8_fields);
 }
 

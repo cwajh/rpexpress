@@ -10,4 +10,7 @@ std::string urlencode(const std::string &src);
 std::map<std::string, std::string> map_for_query_string(const std::string &query_string);
 std::string query_string_for_map(const std::map<std::string, std::string> &key_values);
 
+std::map<std::wstring, std::wstring> ws_map_for_query_string(const std::string &query_string);
+std::string query_string_for_map(const std::map<std::wstring, std::wstring> &key_values);
+
 #endif /* INCLUDE_GUARD_FOR_URLENCODE_HH */

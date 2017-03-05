@@ -17,6 +17,7 @@ def str2cconst(s):
 imports = []
 regex_declarations = []
 path_declarations = []
+post_declarations = []
 with open(file) as paths:
 	lineno = 0
 	for line in paths:
@@ -48,18 +49,36 @@ r"""		if(std::regex_match(ctx.path, path%(lineno)d)){
 				out << "\r\n";
 			}
 			out << "\r\n";
-			copal::%(module)s::gen_html<Output,decltype(params)>(out,params);
+			html_utility util(ctx);
+			copal::%(module)s::gen_html<Output,const decltype(params),html_utility>(out,params,util);
 			return;
 		}
 """%{'lineno':lineno,'module':module})
+		post_declarations.append(
+r"""		if(std::regex_match(ctx.path, path%(lineno)d)){
+			if(ctx.post_error.empty()) {
+				return copal::%(module)s::perform_post(ctx,fields,files);
+			} else {
+				return copal::%(module)s::handle_bad_post(ctx,fields,files);
+			}
+		}
+"""%{'lineno':lineno,'module':module})
+
+print ("""#ifndef CPLPATHS_DEFINED
+#define CPLPATHS_DEFINED""")
+
 print ('#include <regex>')
 print ('#include <cwajh.hh>')
+print ('#include <html_utility.hh>')
 print ('#include <session.hh>')
 for import_stmt in imports:
 	print (import_stmt)
+
 print ("namespace cplpaths {")
+
 for declaration in regex_declarations:
 	print ("\t"+declaration)
+
 print ("\ttemplate<typename Output, typename Context> inline void gen_response(Output &out, Context &ctx) {")
 for declaration in path_declarations:
 	print(declaration)
@@ -70,4 +89,14 @@ r"""		out << "Status: 404 Not Found\r\nContent-Type: text/html; charset=utf-8\r\
 		out << "This isn't expected; normally you should at least be seeing a fancier 404 page.\r\n";
 		out << "Please copy-paste this whole error message and send it to whoever runs the site.";
 """)
-print ("\t}\n}")
+print ("\t}\n")
+
+print ("\ttemplate<typename Context, typename File> inline std::wstring perform_post(Context &ctx, const std::map<std::wstring, std::wstring> &fields, const std::map<std::wstring, File> &files) {")
+for declaration in post_declarations:
+	print(declaration)
+print ('\t\tif(ctx.post_error.empty()) { ctx.post_error=std::wstring(L"Template not found: ") + ctx.path; }')
+print ('\t\treturn L"";')
+print ("\t}\n")
+
+print ("}\n")
+print ("#endif")

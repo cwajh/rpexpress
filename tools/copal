@@ -285,9 +285,13 @@ inline std::wstring handle_bad_post(Environment& env, const std::map<std::wstrin
 	return _on_bad_post<Environment,File>(env,fields,files);
 }
 
-template<typename Output, typename Params>
-inline void gen_html(Output& out, Params& params) {
+template<typename Output, typename Params, typename UtilityHelper>
+inline void gen_fragment(Output& out, Params& params, UtilityHelper &util) {
 %(content)s
+}
+template<typename Output, typename Params, typename UtilityHelper>
+inline void gen_html(Output& out, Params& params, UtilityHelper &util) {
+	gen_fragment<Output,Params,UtilityHelper>(out,params,util);
 }
 }}
  """%({'name':name,'content':content}))
@@ -309,6 +313,7 @@ namespace copal {
 	static constexpr nothing_t nothing;
 	template<typename Environment> static nothing_t _gen_headers(Environment& env, std::map<std::string, std::string>& headers) {
 		headers["Content-Type"] = "text/html; charset=utf-8";
+		return nothing;
 	}
 	template<typename Environment, typename File> static std::wstring _perform_post(Environment& env, const std::map<std::wstring, std::wstring> &fields, const std::map<std::wstring, File> &files) {
 		return L"";

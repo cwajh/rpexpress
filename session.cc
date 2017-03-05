@@ -56,9 +56,12 @@ std::map<std::string, std::string> session_data_for_cookies(const std::map<std::
 		cookie = w2s(cookie_field->second);
 	}
 
+	// This covers all dataless cases, including benign "first visit" cases.
+	// TODO(cwajh): debuggability, detectability.
 	if(!mac_valid_for_string(received_mac, COOKIE_SALT, cookie)) {
-		std::map<std::string, std::string> nothing;
-		return nothing;
+		std::map<std::string, std::string> new_session;
+		reset_session_identifier(new_session);
+		return new_session;
 	}
 
 	return map_for_query_string(cookie);
@@ -84,11 +87,11 @@ std::vector<std::pair<std::wstring, std::wstring>> headers_for_session_data(cons
 	headers.push_back({L"Set-Cookie",
 		SESSION_MAC_COOKIE + L"=" + s2w(b64_mac)
 		+ L"; Expires=" + s2w(expiration_string)
-		+ L"; SameSite=Lax; HttpOnly"});
+		+ L"; SameSite=Lax; Path=/; HttpOnly"});
 	headers.push_back({L"Set-Cookie",
 		SESSION_COOKIE + L"=" + s2w(session_cookie)
 		+ L"; Expires=" + s2w(expiration_string)
-		+ L"; SameSite=Lax; HttpOnly"});
+		+ L"; SameSite=Lax; Path=/; HttpOnly"});
 	return headers;
 }
 

@@ -49,7 +49,7 @@ GEN_HEADERS
 		"select category, name, value from muse_traits "
 		"where muse = '" + muse_id + "' order by pos;"
 	);
-	for(int i=0; i<traits.size(); ++i) {
+	for(unsigned int i=0; i<traits.size(); ++i) {
 		string category;
 		traits[i][0].to(category);
 		if(category == "major") {

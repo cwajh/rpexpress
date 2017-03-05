@@ -3,13 +3,35 @@
 #include <pqxx/pqxx>
 #include "cwajh.hh"
 
+PERFORM_POST
+	auto it = fields.find(L"txt");
+	if (it == fields.end() || it->second.empty()) {
+		env.post_error = L"say somethin'!";
+	} else if(it->second == L"err") {
+		env.post_error = L"you stuttered. :|";
+		env.post_outcome[L"txt"] = it->second;
+	} else {
+		env.post_outcome[L"received_text"] = it->second;
+	}
+	return L"/woop";
+END_PERFORM_POST
+
 GEN_HEADERS
 	struct BabyPhrase {
 		std::wstring phrase;
 		int64_t index;
 	};
 
-	std::vector<BabyPhrase> out_phrases;
+	struct Info {
+		std::vector<BabyPhrase> phrases;
+		int visits;
+		std::wstring error_to_display;
+		std::wstring failed_text;
+		std::wstring received_text;
+	};
+
+	struct Info out_info;
+
 	pqxx::result phrase_result = env.p_transaction->exec("select * from test_phrases order by idx");
 	for(pqxx::result::size_type i = 0; i < phrase_result.size(); i++) {
 		BabyPhrase phrase;
@@ -20,7 +42,7 @@ GEN_HEADERS
 
 		phrase_result[i][1].to(phrase.index);
 
-		out_phrases.push_back(phrase);
+		out_info.phrases.push_back(phrase);
 	}
 	auto p_visit_count = env.session.find("visit_count");
 	int visit_count = 0;
@@ -31,8 +53,12 @@ GEN_HEADERS
 	}
 	visit_count++;
 	env.session["visit_count"] = std::to_string(visit_count);
-	out_phrases.push_back({std::wstring(L"This is visit number ") + std::to_wstring(visit_count), 99});
-	return out_phrases;
+	out_info.visits = visit_count;
+
+	out_info.received_text = env.post_outcome[L"received_text"];
+	out_info.failed_text = env.post_outcome[L"txt"];
+	out_info.error_to_display = env.post_error;
+	return out_info;
 END_GEN_HEADERS
 }}>
 
@@ -40,10 +66,21 @@ END_GEN_HEADERS
 	< title Fourteen phrases to keep in mind. >
 >
 < body
+	<h2 Welcome to visit #&{{ params.visits }}&>
 	< ul
-	&& for (auto item : params) {
+	&& for (auto item : params.phrases) {
 		< li &{{ item.phrase }}& >
 	&& }
+	>
+	&& if (!params.received_text.empty()) {
+		<b "&{{ params.received_text }}&" successfully posted :)>
+	&& }
+	&& if (!params.error_to_display.empty()) {
+		<strong(style='color:red') &{{ params.error_to_display }}&>
+	&& }
+	<form(action="/woop" method="post") &{{ util.form_tokens(L"/woop") }}&
+		<input(type='text' name='txt' value='&{{ params.failed_text }}&') />
+		<input(type='submit' value='Try Me') />
 	>
 >
 
