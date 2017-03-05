@@ -266,11 +266,11 @@ def gen_header_body(name,input,doctype, base_indent = 0):
 """
 	header = header%{'name':name}
 
+	doctype_code = ""
+	if doctype:
+		doctype_code = "\tout << %s << std::endl;\n"%wrap_as_lstring("<!DOCTYPE %s>"%(doctype))
 	# remaining nodes form the body.
 	content = "".join(qq for qq in [q.pretty_string(indent=base_indent) for q in top_nodes] if qq)
-	if doctype:
-		doctype = "<!DOCTYPE %s>"%(doctype)
-		content = "\tout << %s << std::endl;\n"%wrap_as_lstring(doctype) + content
 	return namedtuple('GHB','header body')(header, """namespace copal { namespace %(name)s {
 template<typename Environment>
 inline auto gen_headers(Environment& env, std::map<std::string, std::string>& headers) {
@@ -291,10 +291,12 @@ inline void gen_fragment(Output& out, Params& params, UtilityHelper &util) {
 }
 template<typename Output, typename Params, typename UtilityHelper>
 inline void gen_html(Output& out, Params& params, UtilityHelper &util) {
-	gen_fragment<Output,Params,UtilityHelper>(out,params,util);
+%(doctype)s	gen_fragment<Output,Params,UtilityHelper>(out,params,util);
 }
 }}
- """%({'name':name,'content':content}))
+"""%(
+	{'name':name,'content':content,'doctype':doctype_code})
+)
 
 def gen(name, ghbs, src_name=None):
 	header = '\n'.join([q.header for q in ghbs])
