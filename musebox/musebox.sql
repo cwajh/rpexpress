@@ -132,8 +132,8 @@ create table avatars (
 	credit_text varchar(140)
 );
 create table userpics (
-	userpic_id uuid,
-	mun uuid references muns(mun),
+	userpic_id uuid primary key,
+	mun uuid references muns(mun_id),
 	image char(43) references static_resource(hash),
 	position int,
 	option_text varchar(40),
