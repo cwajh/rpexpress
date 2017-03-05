@@ -1,15 +1,23 @@
-Templated pages are written in Copal. This is a slight modification of the Amber
-(https://github.com/burner/sweet.hpp.git) language, completely rewritten.
+Templated pages are written in Copal. This is a language inspired by Amber
+(https://github.com/burner/sweet.hpp.git), but completely rewritte and with
+some meaningful differences.
 
-cpl2html gives a way to quickly get up and running with a cpl file. It requires the
-JSON for Modern C++ library (https://github.com/nlohmann/json).
+These are all brought together by a script that generates a URL regex-matcher
+from a config file (paths/paths.lst).
 
-Use a single fastcgi++ to call all page headers for dynamic access.
+Database is currently directly-accessed Postgres. But that will soon become
+some ORM thingy (ODB most likely).
 
-	g++ --std=c++1y -I/home/rpexpress/local/include -L/home/rpexpress/local/lib \
-		-lboost_thread-mt -lboost_system-mt -pthread -lboost_date_time-mt \
-		fcgi_stuff.cc local/lib/libfastcgipp.a -o stuff.fcgi
+Makefile works. Invoke the binary with spawn-fcgi and point an nginx at it.
 
-Configure lighttpd mod_fastcgi to hit that.
+Full list of libraries you will need:
+	Boost utf8 encode/decode.
+	fastcgi++ (which pulls in much more Boost-y stuff)
+	libpqxx
+	libcryptopp
+	(libodb soon?)
+
+Kinda want to remove Boost but until the new fastcgi++ is ready for prime time
+it'd be a hassle. Maybe some wcstrtombs thing can work?
 
 Unsolved: hitting static file, then backfilling to dynamic file?
