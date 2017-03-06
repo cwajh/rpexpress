@@ -10,7 +10,7 @@ top.fcgi: genpaths_fcgi.cc copal_headers copal_paths cwajh.hh request_context.hh
 		$(TOP_LIBS) -pthread -o top.fcgi
 
 # pull in dependency info for *existing* .o files
-include $(TOP_OBJECTS:.o=.d)
+-include $(TOP_OBJECTS:.o=.d)
 
 # compile and generate dependency info
 %.o: %.cc
