@@ -1,13 +1,13 @@
 export LOCALD = /home/rpexpress/local
-export CXXFLAGS = --std=c++1y -g -I$(PWD) -I$(LOCALD)/include -I. -Wall
+export CXXFLAGS = --std=c++1y -g -I$(PWD) -I$(LOCALD)/include -I. -Wall -Wno-unknown-pragmas
 
 TOP_CCS = session.cc urlencode.cc base64.cc keys.cc post.cc html_utility.cc genpaths_fcgi.cc
 TOP_OBJECTS = session.o urlencode.o base64.o keys.o post.o html_utility.o genpaths_fcgi.o
 TOP_LIBS = -lpqxx -lboost_thread-mt -lboost_system-mt -lcryptopp -lodb -lodb-pgsql -lboost_date_time-mt
 
-top.fcgi: genpaths_fcgi.cc copal_headers copal_paths cwajh.hh request_context.hh $(TOP_OBJECTS)
+top.fcgi: genpaths_fcgi.cc copal_headers copal_paths odb_stuff $(TOP_OBJECTS)
 	g++ --std=c++1y -g -L$(LOCALD)/lib -Wall $(TOP_OBJECTS) $(LOCALD)/lib/libfastcgipp.a \
-		$(TOP_LIBS) -pthread -o top.fcgi
+		db/odb_support.a $(TOP_LIBS) -pthread -o top.fcgi
 
 # pull in dependency info for *existing* .o files
 -include $(TOP_OBJECTS:.o=.d)
@@ -23,13 +23,19 @@ copal_headers:
 copal_paths:
 	cd paths && make cplpaths.hh
 
+odb_stuff:
+	cd db && make odb_support.a
+
 clean_copal:
 	cd copal && make clean
 
 clean_paths:
 	cd paths && make clean
 
-clean: clean_copal clean_paths
+clean_odb:
+	cd db && make clean
+
+clean: clean_copal clean_paths clean_odb
 	rm -f top.fcgi *.o *.d
 
 install:

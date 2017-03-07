@@ -2,6 +2,8 @@
 #include <vector>
 #include <pqxx/pqxx>
 #include "cwajh.hh"
+#include "db/baby_phrase.hh"
+#include "db/baby_phrase.odb.hh"
 
 PERFORM_POST
 	auto it = fields.find(L"txt");
@@ -17,13 +19,8 @@ PERFORM_POST
 END_PERFORM_POST
 
 GEN_HEADERS
-	struct BabyPhrase {
-		std::wstring phrase;
-		int64_t index;
-	};
-
 	struct Info {
-		std::vector<BabyPhrase> phrases;
+		std::vector<db::baby_phrase> phrases;
 		int visits;
 		std::wstring error_to_display;
 		std::wstring failed_text;
@@ -32,18 +29,16 @@ GEN_HEADERS
 
 	struct Info out_info;
 
-	pqxx::result phrase_result = env.p_transaction->exec("select * from test_phrases order by idx");
-	for(pqxx::result::size_type i = 0; i < phrase_result.size(); i++) {
-		BabyPhrase phrase;
+	using namespace odb::core;
+	typedef odb::query<db::baby_phrase> query;
+	typedef odb::result<db::baby_phrase> result;
 
-		std::string phrase_utf8;
-		phrase_result[i][0].to(phrase_utf8);
-		phrase.phrase = s2w(phrase_utf8);
-
-		phrase_result[i][1].to(phrase.index);
-
-		out_info.phrases.push_back(phrase);
+	transaction txn(env.p_odb->begin());
+	result phrase_result(env.p_odb->template query<db::baby_phrase> ((query::idx < 15) + "ORDER BY" + query::idx));
+	for(auto it = phrase_result.begin(); it != phrase_result.end(); ++it) {
+		out_info.phrases.push_back(*it);
 	}
+
 	auto p_visit_count = env.session.find("visit_count");
 	int visit_count = 0;
 	if (p_visit_count != env.session.end()) {
@@ -69,7 +64,7 @@ END_GEN_HEADERS
 	<h2 Welcome to visit #&{{ params.visits }}&>
 	< ul
 	&& for (auto item : params.phrases) {
-		< li &{{ item.phrase }}& >
+		< li &{{ s2w(item.phrase) }}& >
 	&& }
 	>
 	&& if (!params.received_text.empty()) {

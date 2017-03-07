@@ -2,9 +2,14 @@
 #include <fstream>
 #include <fastcgi++/request.hpp>
 #include <fastcgi++/manager.hpp>
-#include <string>
-#include <vector>
+#include <odb/database.hxx>
+#include <odb/transaction.hxx>
+#include <odb/pgsql/database.hxx>
 #include <pqxx/pqxx>
+#include <vector>
+#include <string>
+
+
 #include "request_context.hh"
 #include "cwajh.hh"
 #include "post.hh"
@@ -29,12 +34,18 @@ class TopServlet: public Fastcgipp::Request<wchar_t>
       static thread_local pqxx::connection db_conn("dbname=rpexpress");
       return &db_conn;
    }
+   static odb::core::database *odb_conn() {
+      // Thread-safe class!
+      static odb::pgsql::database odb_conn("rpexpress","","rpexpress");
+      return &odb_conn;
+   }
    bool response()
    {
       error_log(w2s(L"Request received: " + environment().requestUri).c_str());
       pqxx::work request_xact(*db_conn(), "request");
       struct request_context ctx = {
         &request_xact,
+        odb_conn(),
         // simply using scriptName leaves out later bits of the path. no good!
         strip_query(environment().requestUri),
         environment().gets,
