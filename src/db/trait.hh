@@ -15,7 +15,7 @@ namespace db {
 
 		#pragma db id
 		pkey_t trait_id;
-		id position;
+		int position;
 
 		#pragma db not_null
 		LP<muse> character;
