@@ -1,0 +1,5 @@
+#!/usr/bin/python
+
+import sys
+
+print ("\n".join('include "%s"'%(q) for q in sys.argv[1:]))
