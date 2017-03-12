@@ -22,4 +22,6 @@ namespace db {
 	template<typename T> using LW = odb::lazy_weak_ptr<T>;
 }
 
+#pragma db value(std::wstring) type("TEXT")
+
 #endif /*INCLUDE_GUARD_FOR_DB_DBTYPES_HH*/
