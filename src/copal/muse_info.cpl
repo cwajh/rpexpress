@@ -26,7 +26,7 @@ GEN_HEADERS
 
 	{
 		typedef odb::query<db::muse> q_muse;
-		auto result = env.p_odb->query<db::muse>(q_muse::username == w2s(muse_for_path(env.path)));
+		auto result = env.p_odb->template query<db::muse>(q_muse::username == w2s(muse_for_path(env.path)));
 		if(result.empty()) {
 			headers["Status"] = "404 Not Found";
 			return muse_info;
@@ -38,7 +38,7 @@ GEN_HEADERS
 	}
 	{
 		typedef odb::query<db::trait> q_trait;
-		auto result = env.p_odb->query<db::trait>(q_trait::character == muse_info.muse);
+		auto result = env.p_odb->template query<db::trait>(q_trait::character == muse_info.muse);
 		for(auto &trait : result) {
 			if(trait->category == db::major) {
 				muse_info.major_traits.push_back(trait);
@@ -63,12 +63,12 @@ GEN_HEADERS
 	
 	{
 		typedef odb::query<db::artwork> q_art;
-		auto result = env.p_odb->query<db::artwork>(
+		auto result = env.p_odb->template query<db::artwork>(
 			q_art::subject == muse_info.muse &&
 			q_art::position == muse_info.image_index +
 			"ORDER BY" + q_art::position);
 		
-		has_next_img = muse_info.image_index < (result.size()-1);
+		muse_info.has_next_img = muse_info.image_index < (result.size()-1);
 		int curr_idx = 0;
 		for(P<db::artwork> &artwork : result) {
 			if(curr_idx == muse_info.image_index) {
@@ -103,13 +103,13 @@ END_GEN_HEADERS
 				  * Makes things awkward. */&
 
 				<{{	std::wstring portrait_href(L"?img="); }}>
-				<a(href='&{{ has_prev_img ? (portrait_href+std::to_wstring(params.image_index-1)) : L"" }}&') <img#prev_portrait_nav(&{{
-					has_prev_img ? L"src='/static/prev_portrait_btn.png' class='prev_nav nav_enabled' alt='previous image'"
-					             : L"src='/static/prev_portrait_placeholder.png' class='prev_nav nav_disabled'"}}&)
+				<a(href='&{{ muse_info.has_prev_img ? (portrait_href+std::to_wstring(params.image_index-1)) : L"" }}&') <img#prev_portrait_nav(&{{
+					muse_info.has_prev_img ? L"src='/static/prev_portrait_btn.png' class='prev_nav nav_enabled' alt='previous image'"
+					                       : L"src='/static/prev_portrait_placeholder.png' class='prev_nav nav_disabled'"}}&)
 				&/* TODO(cwajh): inline quote escaping for the title thingy? can it be auto from being inside the () block? */&
 				/>><img#muse_portrait(src='&{{ params.image_url }}&' title="&{{ params.image_tooltip }}&" alt="&{{ params.image_alt }}&")
-				/><a(href='&{{ has_next ? (portrait_href+std::to_wstring(params.image_index+1)) : L"" }}&') <img#next_portrait_nav(&{{
-					has_next_img ? L"src='/static/next_portrait_btn.png' class='next_nav nav_enabled' alt='next image'"
+				/><a(href='&{{ muse_info.has_next_img ? (portrait_href+std::to_wstring(params.image_index+1)) : L"" }}&') <img#next_portrait_nav(&{{
+					muse_info.has_next_img ? L"src='/static/next_portrait_btn.png' class='next_nav nav_enabled' alt='next image'"
 					             : L"src='/static/next_portrait_placeholder.png' class='next_nav nav_disabled'"}}&) />>
 
 			>
