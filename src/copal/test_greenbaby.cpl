@@ -64,7 +64,7 @@ END_GEN_HEADERS
 	<h2 Welcome to visit #&{{ params.visits }}&>
 	< ul
 	&& for (auto item : params.phrases) {
-		< li &{{ s2w(item.phrase) }}& >
+		< li &{{ item.phrase }}& >
 	&& }
 	>
 	&& if (!params.received_text.empty()) {

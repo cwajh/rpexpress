@@ -5,6 +5,8 @@
 
 #include <odb/core.hxx>
 
+#include "dbtypes.hh"
+
 namespace db {
 	#pragma db object
 	class baby_phrase {
@@ -13,7 +15,7 @@ namespace db {
 		baby_phrase(){}
 		#pragma db id
 		long idx;
-		std::string phrase;
+		std::wstring phrase;
 	};
 }
 
