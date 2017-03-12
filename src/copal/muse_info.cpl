@@ -103,14 +103,14 @@ END_GEN_HEADERS
 				  * Makes things awkward. */&
 
 				<{{	std::wstring portrait_href(L"?img="); }}>
-				<a(href='&{{ muse_info.has_prev_img ? (portrait_href+std::to_wstring(params.image_index-1)) : L"" }}&') <img#prev_portrait_nav(&{{
-					muse_info.has_prev_img ? L"src='/static/prev_portrait_btn.png' class='prev_nav nav_enabled' alt='previous image'"
-					                       : L"src='/static/prev_portrait_placeholder.png' class='prev_nav nav_disabled'"}}&)
+				<a(href='&{{ params.has_prev_img ? (portrait_href+std::to_wstring(params.image_index-1)) : L"" }}&') <img#prev_portrait_nav(&{{
+					params.has_prev_img ? L"src='/static/prev_portrait_btn.png' class='prev_nav nav_enabled' alt='previous image'"
+					                    : L"src='/static/prev_portrait_placeholder.png' class='prev_nav nav_disabled'"}}&)
 				&/* TODO(cwajh): inline quote escaping for the title thingy? can it be auto from being inside the () block? */&
-				/>><img#muse_portrait(src='&{{ params.image_url }}&' title="&{{ params.image_tooltip }}&" alt="&{{ params.image_alt }}&")
-				/><a(href='&{{ muse_info.has_next_img ? (portrait_href+std::to_wstring(params.image_index+1)) : L"" }}&') <img#next_portrait_nav(&{{
-					muse_info.has_next_img ? L"src='/static/next_portrait_btn.png' class='next_nav nav_enabled' alt='next image'"
-					             : L"src='/static/next_portrait_placeholder.png' class='next_nav nav_disabled'"}}&) />>
+				/>><img#muse_portrait(src='&{{ params.image_url }}&' title="&{{ params.image_tooltip }}&" alt="&{{ params.current_image->image_alt }}&")
+				/><a(href='&{{ params.has_next_img ? (portrait_href+std::to_wstring(params.image_index+1)) : L"" }}&') <img#next_portrait_nav(&{{
+					params.has_next_img ? L"src='/static/next_portrait_btn.png' class='next_nav nav_enabled' alt='next image'"
+					                    : L"src='/static/next_portrait_placeholder.png' class='next_nav nav_disabled'"}}&) />>
 
 			>
 
