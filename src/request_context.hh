@@ -4,10 +4,8 @@
 #include <string>
 #include <map>
 #include <odb/transaction.hxx>
-#include <pqxx/pqxx>
 
 struct request_context {
-	pqxx::transaction<> *p_transaction;
 	odb::core::database *p_odb;
 	std::wstring path;
 	std::map<std::wstring, std::wstring> get;

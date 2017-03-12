@@ -1,6 +1,5 @@
 <{{
 #include <vector>
-#include <pqxx/pqxx>
 #include "cwajh.hh"
 #include "db/baby_phrase.hh"
 #include "db/baby_phrase.odb.hh"

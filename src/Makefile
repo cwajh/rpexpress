@@ -3,7 +3,7 @@ export CXXFLAGS = --std=c++1y -g -I$(PWD) -I$(LOCALD)/include -I. -Wall -Wno-unk
 
 TOP_CCS = session.cc urlencode.cc base64.cc keys.cc post.cc html_utility.cc genpaths_fcgi.cc
 TOP_OBJECTS = session.o urlencode.o base64.o keys.o post.o html_utility.o genpaths_fcgi.o
-TOP_LIBS = -lpqxx -lboost_thread-mt -lboost_system-mt -lcryptopp -lodb -lodb-pgsql -lboost_date_time-mt
+TOP_LIBS = -lboost_thread-mt -lboost_system-mt -lcryptopp -lodb -lodb-pgsql -lboost_date_time-mt
 
 top.fcgi: genpaths_fcgi.cc copal_headers copal_paths odb_stuff $(TOP_OBJECTS)
 	g++ --std=c++1y -g -L$(LOCALD)/lib -Wall $(TOP_OBJECTS) $(LOCALD)/lib/libfastcgipp.a \

@@ -6,7 +6,6 @@
 #include <odb/database.hxx>
 #include <odb/transaction.hxx>
 #include <odb/pgsql/database.hxx>
-#include <pqxx/pqxx>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -32,10 +31,6 @@ void error_log(const char* msg)
 }
 class TopServlet: public Fastcgipp::Request<wchar_t>
 {
-   static pqxx::connection *db_conn(void) {
-      static thread_local pqxx::connection db_conn("dbname=rpexpress");
-      return &db_conn;
-   }
    static odb::core::database *odb_conn() {
       // Thread-safe class!
       static odb::pgsql::database odb_conn("rpexpress","","rpexpress");
@@ -44,9 +39,7 @@ class TopServlet: public Fastcgipp::Request<wchar_t>
    bool response()
    {
       error_log(w2s(L"Request received: " + environment().requestUri).c_str());
-      pqxx::work request_xact(*db_conn(), "request");
       struct request_context ctx = {
-        &request_xact,
         odb_conn(),
         // simply using scriptName leaves out later bits of the path. no good!
         strip_query(environment().requestUri),
