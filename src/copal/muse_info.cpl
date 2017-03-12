@@ -110,7 +110,7 @@ END_GEN_HEADERS
 					params.has_prev_img ? L"src='/static/prev_portrait_btn.png' class='prev_nav nav_enabled' alt='previous image'"
 					                    : L"src='/static/prev_portrait_placeholder.png' class='prev_nav nav_disabled'"}}&)
 				&/* TODO(cwajh): inline quote escaping for the title thingy? can it be auto from being inside the () block? */&
-				/>><img#muse_portrait(src='&{{
+				/>><img#muse_portrait(src='/static/&{{
 					params.current_image.resource->hash + L"." + params.current_image.resource->extension
 				}}&' title="&{{
 					params.current_image.tooltip
