@@ -3,39 +3,39 @@
 #include <string>
 #include <vector>
 #include <utility>
-#include <pqxx/pqxx>
 #include <regex>
 #include <path_info.hh>
+
+#include "db/rpexpress.hh"
+#include "db/rpexpress.odb.hh"
 
 GEN_HEADERS
 	using namespace std;
 	struct {
-		bool found;
-		// From DB.
-		wstring muse_name;
-		long image_count;
-		wstring image_url;
-		wstring image_alt;
-		wstring image_tooltip;
-		wstring description;
-		vector<pair<wstring, wstring>> major_traits;
-		vector<pair<wstring, wstring>> minor_traits;
+		P<muse> muse;
+		vector<P<trait>> major_traits;
+		vector<P<trait>> minor_traits;
+		P<artwork> current_image;
+		bool has_prev_img;
+		bool has_next_img;
 		// From query args.
 		long image_index;
 	} muse_info;
-	auto txn = env.p_transaction;
-	pqxx::result muse_rs = txn->exec(
-		"select muse_id, name, short_description from muses where username = "
-		+ txn->quote(w2s(muse_for_path(env.path)))
-		+ " limit 1;"
-	);
-	if(muse_rs.size()) {
-		muse_info.found = true;
-	} else {
+
+	typedef odb::query<db::muse> q_muse;
+
+	auto txn = env.p_odb->begin();
+	auto result = env.p_odb->query<db::muse>(q_muse::username == w2s(muse_for_path(env.path)));
+	if(result.empty()) {
 		headers["Status"] = "404 Not Found";
-		muse_info.found = false;
 		return muse_info;
 	}
+	if(result.size() > 1) {
+		//TODO(cwajh): log this impossible(?) case
+	}
+	muse_info.muse = *(result.begin());
+
+
 	string u8_value;
 	muse_rs[0][1].to(u8_value);
 	muse_info.muse_name = s2w(u8_value);
