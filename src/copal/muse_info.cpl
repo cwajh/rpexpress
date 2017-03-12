@@ -30,13 +30,13 @@ GEN_HEADERS
 		auto result = env.p_odb->template query<db::muse>(q_muse::username == muse_for_path(env.path));
 		if(result.empty()) {
 			headers["Status"] = "404 Not Found";
-			result.found = false;
+			muse_info.found = false;
 			return muse_info;
 		}
 		if(result.size() > 1) {
 			//TODO(cwajh): assert log
 		}
-		result.found = true;
+		muse_info.found = true;
 		muse_info.muse = *(result.begin());
 	}
 	{
