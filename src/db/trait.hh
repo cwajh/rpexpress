@@ -6,7 +6,7 @@
 #include "dbtypes.hh"
 
 namespace db {
-	enum trait_type { major, minor };
+	enum trait_type { major=1, minor };
 	#pragma db object pointer(std::shared_ptr)
 	class trait {
 		friend class odb::access;

@@ -25,7 +25,7 @@ namespace db {
 		#pragma db type("VARCHAR(100)")
 		std::wstring name;
 
-		std::string description;
+		std::wstring description;
 		pkey_t default_avatar;
 
 		#pragma db not_null

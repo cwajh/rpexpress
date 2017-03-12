@@ -23,7 +23,7 @@ GEN_HEADERS
 		long image_index;
 	} muse_info;
 
-	auto txn = env.p_odb->begin();
+	odb::core::transaction txn (env.p_odb->begin());
 
 	{
 		typedef odb::query<db::muse> q_muse;
@@ -31,6 +31,7 @@ GEN_HEADERS
 		if(result.empty()) {
 			headers["Status"] = "404 Not Found";
 			muse_info.found = false;
+			muse_info.muse.username = muse_for_path(env.path);
 			return muse_info;
 		}
 		if(result.size() > 1) {
@@ -41,11 +42,14 @@ GEN_HEADERS
 	}
 	{
 		typedef odb::query<db::trait> q_trait;
-		auto result = env.p_odb->template query<db::trait>(q_trait::character == muse_info.muse);
+		auto result = env.p_odb->template query<db::trait>(
+			(q_trait::character == q_trait::_val(muse_info.muse))
+			+ "ORDER BY" + q_trait::position
+		);
 		for(auto &trait : result) {
-			if(trait->category == db::major) {
+			if(trait.category == db::major) {
 				muse_info.major_traits.push_back(trait);
-			} else if (trait->category == db::minor) {
+			} else if (trait.category == db::minor) {
 				muse_info.minor_traits.push_back(trait);
 			} else {
 				//TODO(cwajh): assert log
@@ -67,11 +71,11 @@ GEN_HEADERS
 	{
 		typedef odb::query<db::artwork> q_art;
 		auto result = env.p_odb->template query<db::artwork>(
-			q_art::subject == muse_info.muse &&
-			q_art::position == muse_info.image_index +
+			(q_art::subject == q_art::_val(muse_info.muse) &&
+			q_art::position == muse_info.image_index) +
 			"ORDER BY" + q_art::position);
 		
-		muse_info.has_next_img = muse_info.image_index < (result.size()-1);
+		muse_info.has_next_img = muse_info.image_index+1 < (int)(result.size());
 		int curr_idx = 0;
 		for(db::artwork &artwork : result) {
 			if(curr_idx == muse_info.image_index) {
@@ -82,12 +86,13 @@ GEN_HEADERS
 		}
 	}
 
+	txn.commit();
 	return muse_info;
 END_GEN_HEADERS
 
 }}>
-&&	if (!params.muse) {
-		<h1 No such character as &{{ params.muse.name }}&... >
+&&	if (!params.found) {
+		<h1 No such character as &{{ params.muse.username }}&... >
 &&		return;
 &&	}
 < html
@@ -123,7 +128,7 @@ END_GEN_HEADERS
 
 			>
 
-			<div#muse_profile &{{ params.mun.description }}& >
+			<div#muse_profile &{{ params.muse.description }}& >
 			<dl.stat_sheet#major_stats
 				&&	for (auto trait : params.major_traits) {
 				<dt.stat_name &{{ trait.name }}&> <dd.stat_value &{{ trait.value }}&>

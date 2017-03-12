@@ -1,4 +1,5 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <exception>
 #include <fstream>
 #include <fastcgi++/request.hpp>
 #include <fastcgi++/manager.hpp>
@@ -6,8 +7,9 @@
 #include <odb/transaction.hxx>
 #include <odb/pgsql/database.hxx>
 #include <pqxx/pqxx>
-#include <vector>
+#include <stdexcept>
 #include <string>
+#include <vector>
 
 
 #include "request_context.hh"
@@ -52,6 +54,9 @@ class TopServlet: public Fastcgipp::Request<wchar_t>
         session_data_for_cookies(environment().cookies)
       };
       error_log("Handing off to cplpaths");
+
+try{
+
       if(environment().requestMethod == Fastcgipp::Http::HTTP_METHOD_POST){
         std::map<std::wstring, std::wstring> fields;
         std::map<std::wstring, post_file_t> files;
@@ -68,6 +73,14 @@ class TopServlet: public Fastcgipp::Request<wchar_t>
         cplpaths::gen_response<Fastcgipp::Fcgistream<wchar_t>, struct request_context>(out, ctx);
       }
       error_log("Complete");
+
+} catch(const std::exception& e) {
+	std::exception_ptr eptr = std::current_exception();
+	if(eptr) {
+		error_log(e.what());
+		std::rethrow_exception(eptr);
+	}
+}
       return true;
    }
 };
