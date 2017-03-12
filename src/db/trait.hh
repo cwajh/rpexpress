@@ -23,8 +23,8 @@ namespace db {
 		trait_type category;
 
 		#pragma db type("VARCHAR(140)")
-		std::string name;
-		std::string value;
+		std::wstring name;
+		std::wstring value;
 	};
 }
 

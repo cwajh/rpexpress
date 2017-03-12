@@ -20,10 +20,10 @@ namespace db {
 		pkey_t muse_id;
 
 		#pragma db type("VARCHAR(20)")
-		std::string username;
+		std::wstring username;
 
 		#pragma db type("VARCHAR(100)")
-		std::string name;
+		std::wstring name;
 
 		std::string description;
 		pkey_t default_avatar;

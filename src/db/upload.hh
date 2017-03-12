@@ -13,10 +13,10 @@ namespace db {
 		upload(){}
 
 		#pragma db id type("CHAR(43)")
-		std::string hash; // sha256, base64 encoded
+		std::wstring hash; // sha256, base64 encoded
 
 		#pragma db type("VARCHAR(10)")
-		std::string extension;
+		std::wstring extension;
 	};
 }
 

@@ -26,10 +26,10 @@ namespace db {
 
 		int position;
 
-		std::string option_text;
-		std::string tooltip;
-		std::string fallback_text;
-		std::string credit;
+		std::wstring option_text;
+		std::wstring tooltip;
+		std::wstring fallback_text;
+		std::wstring credit;
 	};
 }
 

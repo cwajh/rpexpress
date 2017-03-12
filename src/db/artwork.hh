@@ -26,9 +26,9 @@ namespace db {
 
 		int position;
 
-		std::string tooltip;
-		std::string fallback_text;
-		std::string description;
+		std::wstring tooltip;
+		std::wstring fallback_text;
+		std::wstring description;
 	};
 }
 

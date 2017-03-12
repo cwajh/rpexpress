@@ -19,15 +19,15 @@ namespace db {
 		pkey_t mun_id;
 
 		#pragma db type("VARCHAR(20)")
-		std::string username;
+		std::wstring username;
 
 		#pragma db type("VARCHAR(140)")
-		std::string email;
+		std::wstring email;
 
 		int64_t pw_salt;
 
 		#pragma db type("CHAR(43)")
-		std::string pw_hash; //base64 encoded sha256
+		std::wstring pw_hash; //base64 encoded sha256
 
 		pkey_t default_userpic;
 
