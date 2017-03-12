@@ -1,4 +1,4 @@
-RPEXPRESS_HH = muse.hh mun.hh artwork.hh upload.hh userpic.hh
+RPEXPRESS_HH = muse.hh mun.hh artwork.hh upload.hh userpic.hh trait.hh
 
 DB_HEADERS = baby_phrase.hh rpexpress.hh
 DB_CXX = $(DB_HEADERS:.hh=.odb.cc)
