@@ -26,7 +26,7 @@ GEN_HEADERS
 
 	{
 		typedef odb::query<db::muse> q_muse;
-		auto result = env.p_odb->template query<db::muse>(q_muse::username == w2s(muse_for_path(env.path)));
+		auto result = env.p_odb->template query<db::muse>(q_muse::username == muse_for_path(env.path));
 		if(result.empty()) {
 			headers["Status"] = "404 Not Found";
 			return muse_info;
