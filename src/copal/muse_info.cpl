@@ -12,141 +12,119 @@
 GEN_HEADERS
 	using namespace std;
 	struct {
-		P<muse> muse;
-		vector<P<trait>> major_traits;
-		vector<P<trait>> minor_traits;
-		P<artwork> current_image;
+		P<db::muse> muse;
+		vector<db::trait> major_traits;
+		vector<db::trait> minor_traits;
+		P<db::artwork> current_image;
 		bool has_prev_img;
 		bool has_next_img;
 		// From query args.
 		long image_index;
 	} muse_info;
 
-	typedef odb::query<db::muse> q_muse;
-
 	auto txn = env.p_odb->begin();
-	auto result = env.p_odb->query<db::muse>(q_muse::username == w2s(muse_for_path(env.path)));
-	if(result.empty()) {
-		headers["Status"] = "404 Not Found";
-		return muse_info;
+
+	{
+		typedef odb::query<db::muse> q_muse;
+		auto result = env.p_odb->query<db::muse>(q_muse::username == w2s(muse_for_path(env.path)));
+		if(result.empty()) {
+			headers["Status"] = "404 Not Found";
+			return muse_info;
+		}
+		if(result.size() > 1) {
+			//TODO(cwajh): assert log
+		}
+		muse_info.muse = *(result.begin());
 	}
-	if(result.size() > 1) {
-		//TODO(cwajh): log this impossible(?) case
-	}
-	muse_info.muse = *(result.begin());
-
-
-	string u8_value;
-	muse_rs[0][1].to(u8_value);
-	muse_info.muse_name = s2w(u8_value);
-	muse_rs[0][2].to(u8_value);
-	muse_info.description = s2w(u8_value);
-
-	string muse_id;
-	muse_rs[0][0].to(muse_id);
-	
-	pqxx::result traits = txn->exec(
-		"select category, name, value from muse_traits "
-		"where muse = '" + muse_id + "' order by pos;"
-	);
-	for(unsigned int i=0; i<traits.size(); ++i) {
-		string category;
-		traits[i][0].to(category);
-		if(category == "major") {
-			string u8_key;
-			traits[i][1].to(u8_key);
-			traits[i][2].to(u8_value);
-			muse_info.major_traits.push_back(
-				make_pair(s2w(u8_key), s2w(u8_value))
-			);
-		} else if(category == "minor") {
-			string u8_key;
-			traits[i][1].to(u8_key);
-			traits[i][2].to(u8_value);
-			muse_info.minor_traits.push_back(
-				make_pair(s2w(u8_key), s2w(u8_value))
-			);
+	{
+		typedef odb::query<db::trait> q_trait;
+		auto result = env.p_odb->query<db::trait>(q_trait::character == muse_info.muse);
+		for(auto &trait : result) {
+			if(trait->category == db::major) {
+				muse_info.major_traits.push_back(trait);
+			} else if (trait->category == db::minor) {
+				muse_info.minor_traits.push_back(trait);
+			} else {
+				//TODO(cwajh): assert log
+			}
 		}
 	}
-
-	auto imgParam = env.get.find(L"img");
-	if (imgParam == env.get.end()) {
+	
+	auto img_param = env.get.find(L"img");
+	if (img_param == env.get.end()) {
 		muse_info.image_index = 0;
 	} else {
-		muse_info.image_index = stol(imgParam->second);
+		muse_info.image_index = stol(img_param->second);
 		if (muse_info.image_index < 0) {
 			muse_info.image_index = 0;
 		}
 	}
+	muse_info.has_prev_img = muse_info.image_index > 0;
 	
-	pqxx::result art = txn->exec(
-		"select hash, extension, tooltip_text, fallback_text"
-		" from art inner join static_resource on (image = hash) "
-		" where muse = '" + muse_id + "' order by position;"
-	);
-
-	muse_info.image_count = art.size();
-	if (muse_info.image_index < muse_info.image_count) {
-		string url("/static/");
-		art[muse_info.image_index][0].to(u8_value);
-		url += u8_value;
-		art[muse_info.image_index][1].to(u8_value);
-		url += ".";
-		url += u8_value;
-		muse_info.image_url = s2w(url);
-		art[muse_info.image_index][2].to(u8_value);
-		muse_info.image_tooltip = s2w(u8_value);
-		art[muse_info.image_index][3].to(u8_value);
-		muse_info.image_alt = s2w(u8_value);
+	{
+		typedef odb::query<db::artwork> q_art;
+		auto result = env.p_odb->query<db::artwork>(
+			q_art::subject == muse_info.muse &&
+			q_art::position == muse_info.image_index +
+			"ORDER BY" + q_art::position);
+		
+		has_next_img = muse_info.image_index < (result.size()-1);
+		int curr_idx = 0;
+		for(P<db::artwork> &artwork : result) {
+			if(curr_idx == muse_info.image_index) {
+				muse_info.current_image = artwork;
+			} else {
+				curr_idx++;
+			}
+		}
 	}
+
 	return muse_info;
 END_GEN_HEADERS
 
 }}>
-&&	if (!params.found) {
-		<h1 No such character as &{{ params.muse_name }}&... >
+&&	if (!params.muse) {
+		<h1 No such character as &{{ params.muse->name }}&... >
 &&		return;
 &&	}
 < html
 	< head
 		<link(rel='stylesheet' type='text/css' href='/static/theme.css') />
-		<title &{{ params.muse_name }}&>
+		<title &{{ params.muse->name }}&>
 	>
 	< body.doc_with_major_pane
 		<@include nav_bar params@>
 		< div#major_pane
 
-			< h1#muse_name &{{ params.muse_name }}&>
+			< h1#muse_name &{{ params.muse->name }}&>
 			< div#muse_portraits
 				&/* Sorry this section is a mess. 
 				  * All three img tags must have zero padding whitespace.
 				  * Makes things awkward. */&
 
-				<{{	bool has_prev = params.image_index > 0;
-					bool has_next = params.image_count-1 > params.image_index;
-					std::wstring portrait_href(L"?img="); }}>
-				<a(href='&{{ has_prev ? (portrait_href+std::to_wstring(params.image_index-1)) : L"" }}&') <img#prev_portrait_nav(&{{
-					has_prev ? L"src='/static/prev_portrait_btn.png' class='prev_nav nav_enabled' alt='previous image'"
-					         : L"src='/static/prev_portrait_placeholder.png' class='prev_nav nav_disabled'"}}&)
+				<{{	std::wstring portrait_href(L"?img="); }}>
+				<a(href='&{{ has_prev_img ? (portrait_href+std::to_wstring(params.image_index-1)) : L"" }}&') <img#prev_portrait_nav(&{{
+					has_prev_img ? L"src='/static/prev_portrait_btn.png' class='prev_nav nav_enabled' alt='previous image'"
+					             : L"src='/static/prev_portrait_placeholder.png' class='prev_nav nav_disabled'"}}&)
 				&/* TODO(cwajh): inline quote escaping for the title thingy? can it be auto from being inside the () block? */&
 				/>><img#muse_portrait(src='&{{ params.image_url }}&' title="&{{ params.image_tooltip }}&" alt="&{{ params.image_alt }}&")
 				/><a(href='&{{ has_next ? (portrait_href+std::to_wstring(params.image_index+1)) : L"" }}&') <img#next_portrait_nav(&{{
-					has_next ? L"src='/static/next_portrait_btn.png' class='next_nav nav_enabled' alt='next image'"
-					         : L"src='/static/next_portrait_placeholder.png' class='next_nav nav_disabled'"}}&) />>
+					has_next_img ? L"src='/static/next_portrait_btn.png' class='next_nav nav_enabled' alt='next image'"
+					             : L"src='/static/next_portrait_placeholder.png' class='next_nav nav_disabled'"}}&) />>
 
 			>
 
-			<div#muse_profile &{{ params.description }}& >
+			<div#muse_profile &{{ params.mun->description }}& >
 			<dl.stat_sheet#major_stats
 				&&	for (auto trait : params.major_traits) {
-				<dt.stat_name &{{ trait.first }}&> <dd.stat_value &{{ trait.second }}&>
+				<dt.stat_name &{{ trait.name }}&> <dd.stat_value &{{ trait.value }}&>
 				&&	}
 			>
 		>
 		< div#minor_pane
 			< dl.stat_sheet#minor_stats
 				<{{ for (auto trait : params.minor_traits) { }}>
-				<dt.stat_name &{{ trait.first }}&> <dd.stat_value &{{ trait.second }}&>
+				<dt.stat_name &{{ trait.name }}&> <dd.stat_value &{{ trait.value }}&>
 				<{{ } }}>
 			>
 		>
