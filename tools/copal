@@ -303,7 +303,7 @@ def gen_header_body(name,input,doctype, base_indent = 0):
 	# these need to be outside the scope of copal macros. f'rex, including other copal files
 	top_header = ""
 	for dependency in sum((q.dependencies() for q in top_nodes),[]):
-		sys.stderr.write(repr(dependency))
+		#sys.stderr.write(repr(dependency))
 		top_header += dependency + '\n';
 
 	doctype_code = ""
