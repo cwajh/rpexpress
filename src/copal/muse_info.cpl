@@ -12,10 +12,11 @@
 GEN_HEADERS
 	using namespace std;
 	struct {
-		P<db::muse> muse;
+		bool found;
+		db::muse muse;
 		vector<db::trait> major_traits;
 		vector<db::trait> minor_traits;
-		P<db::artwork> current_image;
+		db::artwork current_image;
 		bool has_prev_img;
 		bool has_next_img;
 		// From query args.
@@ -29,11 +30,13 @@ GEN_HEADERS
 		auto result = env.p_odb->template query<db::muse>(q_muse::username == muse_for_path(env.path));
 		if(result.empty()) {
 			headers["Status"] = "404 Not Found";
+			result.found = false;
 			return muse_info;
 		}
 		if(result.size() > 1) {
 			//TODO(cwajh): assert log
 		}
+		result.found = true;
 		muse_info.muse = *(result.begin());
 	}
 	{
@@ -70,7 +73,7 @@ GEN_HEADERS
 		
 		muse_info.has_next_img = muse_info.image_index < (result.size()-1);
 		int curr_idx = 0;
-		for(P<db::artwork> &artwork : result) {
+		for(db::artwork &artwork : result) {
 			if(curr_idx == muse_info.image_index) {
 				muse_info.current_image = artwork;
 			} else {
@@ -84,19 +87,19 @@ END_GEN_HEADERS
 
 }}>
 &&	if (!params.muse) {
-		<h1 No such character as &{{ params.muse->name }}&... >
+		<h1 No such character as &{{ params.muse.name }}&... >
 &&		return;
 &&	}
 < html
 	< head
 		<link(rel='stylesheet' type='text/css' href='/static/theme.css') />
-		<title &{{ params.muse->name }}&>
+		<title &{{ params.muse.name }}&>
 	>
 	< body.doc_with_major_pane
 		<@include nav_bar params@>
 		< div#major_pane
 
-			< h1#muse_name &{{ params.muse->name }}&>
+			< h1#muse_name &{{ params.muse.name }}&>
 			< div#muse_portraits
 				&/* Sorry this section is a mess. 
 				  * All three img tags must have zero padding whitespace.
@@ -107,14 +110,20 @@ END_GEN_HEADERS
 					params.has_prev_img ? L"src='/static/prev_portrait_btn.png' class='prev_nav nav_enabled' alt='previous image'"
 					                    : L"src='/static/prev_portrait_placeholder.png' class='prev_nav nav_disabled'"}}&)
 				&/* TODO(cwajh): inline quote escaping for the title thingy? can it be auto from being inside the () block? */&
-				/>><img#muse_portrait(src='&{{ params.image_url }}&' title="&{{ params.image_tooltip }}&" alt="&{{ params.current_image->image_alt }}&")
+				/>><img#muse_portrait(src='&{{
+					params.current_image.resource.hash
+				}}&' title="&{{
+					params.current_image.resource.tooltip
+				}}&" alt="&{{
+					params.current_image.fallback_text
+				}}&")
 				/><a(href='&{{ params.has_next_img ? (portrait_href+std::to_wstring(params.image_index+1)) : L"" }}&') <img#next_portrait_nav(&{{
 					params.has_next_img ? L"src='/static/next_portrait_btn.png' class='next_nav nav_enabled' alt='next image'"
 					                    : L"src='/static/next_portrait_placeholder.png' class='next_nav nav_disabled'"}}&) />>
 
 			>
 
-			<div#muse_profile &{{ params.mun->description }}& >
+			<div#muse_profile &{{ params.mun.description }}& >
 			<dl.stat_sheet#major_stats
 				&&	for (auto trait : params.major_traits) {
 				<dt.stat_name &{{ trait.name }}&> <dd.stat_value &{{ trait.value }}&>
