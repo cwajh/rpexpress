@@ -14,6 +14,6 @@ odb_support.a: $(DB_OBJECTS)
 	odb --hxx-suffix hh --ixx-suffix ii --cxx-suffix cc --sql-suffix .odbsql \
 		--odb-file-suffix .odb. --generate-query --generate-schema \
 		--hxx-prologue "#include \"prologue.hh\"" -I /home/rpexpress/local/include \
-		--std c++11 -d pgsql $*.hh
+		--std c++11 --sloc-limit 10000 -d pgsql $*.hh
 clean:
 	rm -f *.odb.ii *.odb.cc *.odb.hh *.odbsql *.a *.odb.o rpexpress.hh
