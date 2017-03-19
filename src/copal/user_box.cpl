@@ -1,0 +1,19 @@
+<{{
+#include <db/mun.hh>
+
+struct params_t {
+	P<db::mun> user;
+};
+
+}}>
+
+&& if(params.user) {
+	<div.user_box
+		<span.user_welcome Welcome &{{ params.user->username }}&>
+		<form(method='post' action='/login') &{{ util.form_tokens(L"/login") }}&
+			<input.ub_logout(type='submit' value='Log Out') >
+		>
+	>
+&& } else {
+
+&& }

@@ -3,3 +3,5 @@ muse_info	/muse/[^/]+/info(\.html)?
 coming_soon	/muse/[^/]+/gallery(\.html)?
 coming_soon	/muse/[^/]+/askblog(\.html)?
 coming_soon	/muse/[^/]+/threads(\.html)?
+auth	/login
+gen303	/303

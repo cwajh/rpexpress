@@ -6,7 +6,7 @@
 #include "paths/cplpaths.hh"
 #include "cwajh.hh"
 #include "keys.hh"
-#include "session.hh"
+#include "crypto.hh"
 #include "urlencode.hh"
 
 #define TIMESTAMP_FIELD L"_form_timestamp"

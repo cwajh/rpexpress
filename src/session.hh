@@ -16,8 +16,4 @@ std::vector<std::pair<std::wstring, std::wstring> > headers_for_session_data(con
 void reset_session_identifier(std::map<std::string, std::string> &session_data);
 std::string session_identifier(std::map<std::string, std::string> &session_data);
 
-// These ones can be used if you want to reuse the MAC mechanism. Value returned is already base64 encoded.
-bool mac_valid_for_string(const std::string &mac, const uint8_t salt[32], const std::string &cookie);
-std::string salted_mac_for_string(const uint8_t salt[32], const std::string &cookie);
-
 #endif /* INCLUDE_GUARD_FOR_SESSION_HH */

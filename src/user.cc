@@ -13,9 +13,9 @@ P<db::mun> current_user(odb::core::database *p_db, const std::map<std::string, s
 	P<db::mun> user(p_db->template load<db::mun>(user_id));
 	return user;
 }
-void set_current_user(P<const db::mun> mun, std::map<std::string, std::string> &session) {
-	if(mun){
-		session[USER_ID_KEY] = std::to_string(mun->mun_id);
+void set_current_user(const db::mun *p_mun, std::map<std::string, std::string> &session) {
+	if(p_mun){
+		session[USER_ID_KEY] = std::to_string(p_mun->mun_id);
 	} else {
 		session.erase(USER_ID_KEY);
 	}

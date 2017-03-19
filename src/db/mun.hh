@@ -26,8 +26,8 @@ namespace db {
 
 		int64_t pw_salt;
 
-		#pragma db type("CHAR(43)")
-		std::wstring pw_hash; //base64 encoded sha256
+		#pragma db type("CHAR(44)")
+		std::string pw_hash; //base64 encoded pbkdf2<sha2>
 
 		pkey_t default_userpic;
 

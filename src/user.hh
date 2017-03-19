@@ -7,6 +7,6 @@
 #include "db/mun.hh"
 
 P<db::mun> current_user(odb::core::database *p_db, const std::map<std::string, std::string> &session);
-void set_current_user(P<const db::mun> mun, std::map<std::string, std::string> &session);
+void set_current_user(const db::mun *p_mun, std::map<std::string, std::string> &session);
 
 #endif /* INCLUDE_GUARD_FOR_USER_HH */

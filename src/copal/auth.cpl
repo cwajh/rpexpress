@@ -1,0 +1,104 @@
+<{{
+
+#include <cwajh.hh>
+#include <crypto.hh>
+#include <user.hh>
+
+const std::wstring LOGIN_ERROR_MSG(L"Couldn't find such a user.");
+
+PERFORM_POST
+	auto rt_field = fields.find(L"return_to");
+	std::wstring return_to = L"/";
+	if(rt_field != fields.end()) {
+		return_to = rt_field->second;
+	}
+	if(fields.find(L"logout") != fields.end()) {
+		set_current_user(nullptr, env.session);
+		env.post_outcome[L"location"] = return_to;
+		return L"/303";
+	}
+
+	if(fields.find(L"username") == fields.end() ||
+	   fields.find(L"password") == fields.end()) {
+		env.post_error = LOGIN_ERROR_MSG;
+		env.post_outcome[L"return_to"] = return_to;
+		return L"/login";		
+	}
+	std::wstring username = fields.at(L"username");
+
+	odb::core::transaction txn (env.p_odb->begin());
+	typedef odb::query<db::mun> q;
+	auto result = env.p_odb->template query<db::mun>(
+		q::username == username
+	);
+	if(result.empty()) {
+		env.post_error = LOGIN_ERROR_MSG;
+		env.post_outcome[L"return_to"] = return_to;
+		return L"/login";
+	}
+	if(result.size() > 1) {
+		// TODO(cwajh): log.
+		env.post_error = L"Something went very wrong while looking up a user named <";
+		env.post_error += username;
+		env.post_error += L">.";
+		return L"/login";
+	}
+	db::mun user = *(result.begin());
+	if(hash_for_password(w2s(fields.at(L"password")),user.pw_salt) == user.pw_hash) {
+		set_current_user(&user, env.session);
+		env.post_outcome[L"location"] = return_to;
+		return L"/303";
+	} else {
+		env.post_error = LOGIN_ERROR_MSG;
+		env.post_outcome[L"return_to"] = return_to;
+		return L"/login";
+	}
+END_PERFORM_POST
+
+GEN_HEADERS
+	struct {
+		P<db::mun> user;
+		std::wstring return_to;
+	} params;
+
+	odb::core::transaction txn (env.p_odb->begin());
+	params.user = current_user(env.p_odb, env.session);
+	
+	if(env.post_outcome.find(L"return_to") != env.post_outcome.end()) {
+		params.return_to = env.post_outcome.at(L"return_to");
+	} else if (env.get.find(L"return_to") != env.get.end()) {
+		params.return_to = env.get.at(L"return_to");
+	} else {
+		params.return_to = L"/";
+	}
+
+	return params;
+END_GEN_HEADERS
+
+}}>
+
+<html
+	<head
+		<link(rel='stylesheet' type='text/css' href='/static/theme.css') />
+		<title Log In>
+	>
+	<body
+		&& if(params.user) {
+			Welcome &{{ params.user->username }}&!
+			<form(method='POST' action='/login')
+				&{{ util.form_tokens(L"/login") }}&
+				<input(type='hidden' name='return_to' value='&{{params.return_to}}&') />
+				<input(type='hidden' name='logout' value='yes') />
+				<input(type="Submit" value="Log out") />
+			>			
+		&& } else {
+			<form(method='POST' action='/login')
+				&{{ util.form_tokens(L"/login") }}&
+				<input(type='hidden' name='return_to' value='&{{params.return_to}}&') />
+				<div.formfield <label(for="username") Username: ><input(name="username") />>
+				<div.formfield <label(for="password") Password: ><input(name="password" type="password") />>
+				<input(type="Submit" value="Log in") />
+			>
+		&& }
+	>
+>

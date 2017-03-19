@@ -1,10 +1,10 @@
 #include "session.hh"
 
+#include "crypto.hh"
 #include "cwajh.hh"
 #include "base64.hh"
 #include "keys.hh"
 #include "urlencode.hh"
-#include <crypto++/sha3.h>
 #include <chrono>
 
 using namespace std::chrono_literals;
@@ -12,36 +12,6 @@ static const std::wstring SESSION_MAC_COOKIE(L"SESS_MAC");
 static const std::wstring SESSION_COOKIE(L"SESS_DATA");
 static const std::chrono::hours COOKIE_LIFESPAN(2190h);
 static const std::string SESSION_ID("__SESS_ID");
-
-bool mac_valid_for_string(const std::string &mac, const byte salt[32], const std::string &cookie) {
-	const std::string bin_mac = base64_decode(mac);
-	if(bin_mac.length() != 32) {
-		// Invalid. Should be a SHA3-256 hash.
-		return false;
-	}
-
-	// Chose SHA3 b/c it isn't subject to length-extension attacks (makes MAC schedule easier).
-	CryptoPP::SHA3_256 hash;
-	hash.Update(salt, 32);
-	hash.Update((const unsigned char*)cookie.c_str(), cookie.length());
-	if(!hash.Verify((const unsigned char*)bin_mac.c_str())) {
-		// Invalid. Cookie seems tampered with.
-		return false;
-	}
-
-	return true;
-}
-
-std::string salted_mac_for_string(const byte salt[32], const std::string &cookie) {
-	unsigned char mac[32];
-	CryptoPP::SHA3_256 hash;
-	hash.Update(salt, 32);
-	hash.Update((const unsigned char*)cookie.c_str(), cookie.length());
-	hash.Final(&mac[0]);
-	return base64_encode(mac,32);
-}
-
-
 
 std::map<std::string, std::string> session_data_for_cookies(const std::map<std::wstring, std::wstring> &cookies){
 	std::string received_mac;

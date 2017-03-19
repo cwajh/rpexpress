@@ -1,0 +1,10 @@
+<{{
+#include <cwajh.hh>
+
+GEN_HEADERS
+	headers["Status"] = "303";
+	headers["Location"] =  w2s(env.post_outcome[L"location"]);
+	return 0;
+END_GEN_HEADERS
+
+}}>
