@@ -5,6 +5,7 @@
 #include <utility>
 #include <regex>
 #include <path_info.hh>
+#include <user.hh>
 
 #include "db/rpexpress.hh"
 #include "db/rpexpress.odb.hh"
@@ -12,6 +13,8 @@
 GEN_HEADERS
 	using namespace std;
 	struct {
+		P<db::mun> user;
+		wstring path_with_query;
 		bool found;
 		db::muse muse;
 		vector<db::trait> major_traits;
@@ -24,6 +27,9 @@ GEN_HEADERS
 	} muse_info;
 
 	odb::core::transaction txn (env.p_odb->begin());
+
+	muse_info.user = current_user(env.p_odb, env.session);
+	muse_info.path_with_query = copal::user_box::path_with_query(env.path, env.get);
 
 	{
 		typedef odb::query<db::muse> q_muse;
@@ -71,18 +77,21 @@ GEN_HEADERS
 	{
 		typedef odb::query<db::artwork> q_art;
 		auto result = env.p_odb->template query<db::artwork>(
-			(q_art::subject == q_art::_val(muse_info.muse) &&
-			q_art::position == muse_info.image_index) +
+			(q_art::subject == q_art::_val(muse_info.muse)) +
 			"ORDER BY" + q_art::position);
-		
+
+		if(muse_info.image_index >= (signed long long)result.size()) {
+			muse_info.image_index = result.size() - 1;
+		}
 		muse_info.has_next_img = muse_info.image_index+1 < (int)(result.size());
+
 		int curr_idx = 0;
 		for(db::artwork &artwork : result) {
 			if(curr_idx == muse_info.image_index) {
 				muse_info.current_image = artwork;
-			} else {
-				curr_idx++;
+				break;
 			}
+			curr_idx++;
 		}
 	}
 
@@ -101,6 +110,7 @@ END_GEN_HEADERS
 		<title &{{ params.muse.name }}&>
 	>
 	< body.doc_with_major_pane
+		<@include user_box params@>
 		<@include nav_bar params@>
 		< div#major_pane
 
@@ -114,14 +124,13 @@ END_GEN_HEADERS
 				<a(href='&{{ params.has_prev_img ? (portrait_href+std::to_wstring(params.image_index-1)) : L"" }}&') <img#prev_portrait_nav(&{{
 					params.has_prev_img ? L"src='/static/prev_portrait_btn.png' class='prev_nav nav_enabled' alt='previous image'"
 					                    : L"src='/static/prev_portrait_placeholder.png' class='prev_nav nav_disabled'"}}&)
-				&/* TODO(cwajh): inline quote escaping for the title thingy? can it be auto from being inside the () block? */&
 				/>><img#muse_portrait(src='/static/&{{
 					params.current_image.resource->hash + L"." + params.current_image.resource->extension
-				}}&' title="&{{
+				}}&' title=&"{
 					params.current_image.tooltip
-				}}&" alt="&{{
+				}"& alt=&"{
 					params.current_image.fallback_text
-				}}&")
+				}"&)
 				/><a(href='&{{ params.has_next_img ? (portrait_href+std::to_wstring(params.image_index+1)) : L"" }}&') <img#next_portrait_nav(&{{
 					params.has_next_img ? L"src='/static/next_portrait_btn.png' class='next_nav nav_enabled' alt='next image'"
 					                    : L"src='/static/next_portrait_placeholder.png' class='next_nav nav_disabled'"}}&) />>

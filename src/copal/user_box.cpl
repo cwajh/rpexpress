@@ -1,19 +1,36 @@
 <{{
+#include <cwajh.hh>
 #include <db/mun.hh>
+#include <urlencode.hh>
 
+CPL_NAMESPACED
 struct params_t {
 	P<db::mun> user;
+	std::wstring path_with_query;
 };
+inline std::wstring path_with_query(std::wstring path, std::map<std::wstring, std::wstring> get) {
+	if(!get.empty()) {
+		path += L"?";
+		path += s2w(query_string_for_map(get));
+	}
+	return path;
+}
+CPL_END_NAMESPACED
 
 }}>
-
-&& if(params.user) {
-	<div.user_box
-		<span.user_welcome Welcome &{{ params.user->username }}&>
-		<form(method='post' action='/login') &{{ util.form_tokens(L"/login") }}&
-			<input.ub_logout(type='submit' value='Log Out') >
-		>
+<div.user_box
+	<form(method='post' action='/login') &{{ util.form_tokens(L"/login") }}&
+		&& if(!params.path_with_query.empty()) {
+			<input(type='hidden' name='return_to' value='&{{params.path_with_query}}&') />
+		&& }
+		&& if(params.user) {
+			<span.user_welcome Welcome &{{ params.user->username }}&>
+			<input(type='hidden' name='logout' value='1') />
+			<input.ub_logout(type='submit' value='Log Out') />
+		&& } else {
+			<label(for="username") User: ><input(name="username") /><br />
+			<label(for="password") Pass: ><input(name="password" type="password") /><br />
+			<input.ub_login(type='submit' value='Log In') >
+		&& }
 	>
-&& } else {
-
-&& }
+>

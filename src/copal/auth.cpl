@@ -59,10 +59,12 @@ GEN_HEADERS
 	struct {
 		P<db::mun> user;
 		std::wstring return_to;
+		std::wstring error;
 	} params;
 
 	odb::core::transaction txn (env.p_odb->begin());
 	params.user = current_user(env.p_odb, env.session);
+	params.error = env.post_error;
 	
 	if(env.post_outcome.find(L"return_to") != env.post_outcome.end()) {
 		params.return_to = env.post_outcome.at(L"return_to");
@@ -83,6 +85,9 @@ END_GEN_HEADERS
 		<title Log In>
 	>
 	<body
+		&& if(!params.error.empty()) {
+			<div.error_box &{{ params.error }}& >
+		&& }
 		&& if(params.user) {
 			Welcome &{{ params.user->username }}&!
 			<form(method='POST' action='/login')
