@@ -9,9 +9,6 @@ namespace bbcode {
 	using namespace tao::pegtl::ascii;
 	
 	enum preview_type { k_unknown = 0, k_simple, k_attr, k_wrong_simple, k_wrong_attr, k_close, k_wrong_close };
-	
-	class parse_error : public std::runtime_error {
-	};
 
 	// These have self-referential definitions; can only declare them for now.
 	struct untagged_content;
@@ -55,10 +52,10 @@ namespace bbcode {
 	template<typename tag_name>
 	struct open_attr_tag : seq<
 		one<'['>, tag_name, one<'='>,
-		must<
+		//must<
 			sor<unquoted_attr<tag_name>, quoted_attr<tag_name, '"'>, quoted_attr<tag_name, '\''>>,
 			one<']'>
-		>
+		//>
 	> {};
 
 	template<typename tag_name>

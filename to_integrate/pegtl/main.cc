@@ -114,12 +114,38 @@ void check_validity(std::string document) {
 		}
 		
 		identified_tag = bbcode::identify<bbcode::generated::start_of_any_open_tag>(failure_point);
-		if (identified_tag.type) {
-			std::cout << "~~~ Malformed open tag :o" << std::endl;
-			return;
+		if (!identified_tag.type) {
+			identified_tag.length = failure_point.substr(0,16).length();
 		}
-		
-		std::cout << "I dunno what's up with this." << std::endl;
+		diagnosis.annotations.insert(bbcode::trace::code_annotation(
+			error.positions[0].line,
+			error.positions[0].byte_in_line,
+			identified_tag.length,
+			bbcode::trace::k_error
+		));
+		std::ostringstream description;
+		switch(identified_tag.type) {
+			case bbcode::k_simple:
+				// I think the only situation where this can happen is with greedy tags.
+				description << "[" << entity_escape(identified_tag.name) << "] tag ";
+				description << "doesn't seem to have a matching [/" << entity_escape(identified_tag.name) << "].";
+				break;
+			case bbcode::k_wrong_simple:
+				description << "[" << entity_escape(identified_tag.name) << "] tag requires an argument.";
+				break;
+			case bbcode::k_attr:
+				description << "Couldn't find a valid end of your " << entity_escape(identified_tag.name) << " tag's argument. ";
+				description << "Remember, there are special rules to using quotes/apostrophes/close-brackets inside a tag argument.";
+				break;
+			case bbcode::k_wrong_attr:
+				description << "[" << entity_escape(identified_tag.name) << "] tag doesn't expect an argument.";
+				break;
+			default:
+				description << "Invalid bbcode detected, but not sure exactly what's wrong. Contact technical support.<br/>";
+				description << entity_escape(error.what());
+				break;
+		}
+		throw bbcode::trace::parse_error(description.str(), diagnosis);
 	}
 }
 
