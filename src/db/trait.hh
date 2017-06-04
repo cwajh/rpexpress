@@ -4,6 +4,7 @@
 #include <odb/core.hxx>
 
 #include "dbtypes.hh"
+#include "../bbcode/bbcode.hh"
 
 namespace db {
 	enum trait_type { major=1, minor };
@@ -24,7 +25,7 @@ namespace db {
 
 		#pragma db type("VARCHAR(140)")
 		std::wstring name;
-		std::wstring value;
+		bbcode::block value;
 	};
 }
 

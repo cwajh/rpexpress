@@ -140,14 +140,14 @@ END_GEN_HEADERS
 			<div#muse_profile &{{ params.muse.description }}& >
 			<dl.stat_sheet#major_stats
 				&&	for (auto trait : params.major_traits) {
-				<dt.stat_name &{{ trait.name }}&> <dd.stat_value &{{ trait.value }}&>
+				<dt.stat_name &{{ trait.name }}&> <dd.stat_value &{{ trait.value.whtml() }}&>
 				&&	}
 			>
 		>
 		< div#minor_pane
 			< dl.stat_sheet#minor_stats
 				<{{ for (auto trait : params.minor_traits) { }}>
-				<dt.stat_name &{{ trait.name }}&> <dd.stat_value &{{ trait.value }}&>
+				<dt.stat_name &{{ trait.name }}&> <dd.stat_value &{{ trait.value.whtml() }}&>
 				<{{ } }}>
 			>
 		>

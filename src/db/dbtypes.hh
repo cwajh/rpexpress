@@ -6,6 +6,8 @@
 
 #include <odb/lazy-ptr.hxx>
 
+#include "../bbcode/bbcode.hh"
+
 /*#define P std::shared_ptr
 #define W std::weak_ptr
 #define LS odb::lazy_shared_ptr
@@ -23,5 +25,6 @@ namespace db {
 }
 
 #pragma db value(std::wstring) type("TEXT")
+#pragma db value(bbcode::block) type("TEXT")
 
 #endif /*INCLUDE_GUARD_FOR_DB_DBTYPES_HH*/

@@ -75,18 +75,6 @@ namespace bbcode {
 		return escaped.str();
 	}
 
-	template<> struct http_gen_actions<untagged_content> {
-		template< typename matched_a > static void apply( const matched_a& in, std::ostream &out ) {
-			out << entity_escape(in.string());
-		}
-	};
-
-	template<char const* text> struct generate_text {
-		template< typename matched_a > static void apply( const matched_a& in, std::ostream &out ) {
-			out << text;
-		}
-	};
-	
 	static inline void replace_all(std::string &text, const char *needle, size_t needle_len, std::string replacement) {
 		size_t current_position_in_string = text.find(needle);
 		while (current_position_in_string != std::string::npos) {
@@ -98,8 +86,22 @@ namespace bbcode {
 			current_position_in_string = text.find(needle, current_position_in_string + replacement.length());
 		}
 	}
-	
-	
+
+	template<> struct http_gen_actions<untagged_content> {
+		template< typename matched_a > static void apply( const matched_a& in, std::ostream &out ) {
+			std::string processed_text = entity_escape(in.string());
+			replace_all(processed_text, "\n", 1, "<br class='nl'/>\n");
+			out << processed_text;
+		}
+	};
+
+	template<char const* text> struct generate_text {
+		template< typename matched_a > static void apply( const matched_a& in, std::ostream &out ) {
+			out << text;
+		}
+	};
+
+
 	class argument_error : public std::runtime_error {
 	public:
 		trace::codepos culprit;
