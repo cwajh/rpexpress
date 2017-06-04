@@ -38,93 +38,153 @@ namespace bbcode {
 
 	struct untagged_content : star<not_at<start_of_any_single_tag>, any> {};
 
-	///////////////////////
-	// lex debug
-	struct lat_size    : open_attr_tag<TAOCPP_PEGTL_ISTRING("size")> {};
-	struct lat_color   : open_attr_tag<TAOCPP_PEGTL_ISTRING("color")> {};
-	struct lat_font    : open_attr_tag<TAOCPP_PEGTL_ISTRING("font")> {};
-	struct lat_style   : open_attr_tag<TAOCPP_PEGTL_ISTRING("style")> {};
-	struct lat_link    : open_attr_tag<TAOCPP_PEGTL_ISTRING("url")> {};
-
-	struct lt_bold         : open_tag<one<'b'>> {};
-	struct lt_italic       : open_tag<one<'i'>> {};
-	struct lt_underline    : open_tag<one<'u'>> {};
-	struct lt_strike       : open_tag<one<'s'>> {};
-	struct lt_sup          : open_tag<TAOCPP_PEGTL_ISTRING("sup")> {};
-	struct lt_sub          : open_tag<TAOCPP_PEGTL_ISTRING("sub")> {};
-	struct lt_items        : open_tag<TAOCPP_PEGTL_ISTRING("ul")> {};
-	struct lt_list         : open_tag<TAOCPP_PEGTL_ISTRING("ol")> {};
-	struct lt_item         : open_tag<TAOCPP_PEGTL_ISTRING("li")> {};
-	struct lt_quote        : open_tag<TAOCPP_PEGTL_ISTRING("quote")> {};
-	struct lt_left_align   : open_tag<TAOCPP_PEGTL_ISTRING("left")> {};
-	struct lt_right_align  : open_tag<TAOCPP_PEGTL_ISTRING("right")> {};
-	struct lt_center_align : open_tag<TAOCPP_PEGTL_ISTRING("center")> {};
-	
-	struct any_open_tag : sor< 
-  lat_size    ,
-  lat_color   ,
- lat_font    ,
- lat_style   ,
- lt_sup          ,
- lt_sub          ,
- lt_items        ,
- lt_list         ,
- lt_item         ,
- lt_quote        ,
- lt_left_align   ,
- lt_right_align  ,
- lt_center_align ,
- lat_link, generated::tt_hr,
- lt_bold         ,
- lt_italic       ,
- lt_underline    ,
- lt_strike       , generated::gt_code, generated::gt_img, generated::gt_youtube> {};
-	
-	struct lexed_document : seq<
-		untagged_content,
-		star<
-			sor<any_open_tag,generated::any_close_tag>,
-			untagged_content
-		>, must<eof>
-	> {} ;
-	
-	///////////////////////
-
 	struct taggable_content : seq<untagged_content, star<generated::any_complete_tag, untagged_content>> {};
 	
 	struct document : seq<untagged_content, star<generated::any_complete_tag, untagged_content>, must<eof>> {};
 
-	template<typename rule> struct annotation_actions : nothing<rule> {};
+	template<typename entity> tag_identity identify(std::string &snippet) {
+		tag_identity identified_tag {"", k_unknown};
+		try {
+			tao::pegtl::string_input<> in(snippet);
+			tao::pegtl::parse <tao::pegtl::must<entity>, identifier_actions>(in, identified_tag);
+			return identified_tag;
+		} catch (const tao::pegtl::parse_error &error) {
+			return tag_identity {"", k_unknown};
+		}
+	}
 	
-	template<> struct annotation_actions<untagged_content> {
-		template< typename matched_a > static void apply( const matched_a& in ) {
-			std::cout << "|" << in.string() << "|";
+}
+
+
+static std::string entity_quote_escape(const std::string &txt) {
+	std::ostringstream escaped;
+	for(const char &ch : txt) {
+		switch(ch) {
+		case '<':
+			escaped << "&lt;";
+			break;
+		case '>':
+			escaped << "&gt;";
+			break;
+		case '&':
+			escaped << "&amp;";
+			break;
+		case '"':
+			escaped << "&quot;";
+			break;
+		case '\'':
+			escaped << "&apos;";
+			break;
+		default:
+			escaped << ch;
 		}
-	};
-	template<typename tag_name> struct annotation_actions<open_tag<tag_name>> {
-		template< typename matched_a > static void apply( const matched_a& in ) {
-			std::cout << "~" << in.string() << "~";
+	}
+	return escaped.str();
+}
+
+void check_validity(std::string document) {
+	using namespace bbcode;
+	tao::pegtl::string_input<> in(document);
+	std::vector<bbcode::trace::tag> parse_stack;
+	try {
+		tao::pegtl::parse <bbcode::document, bbcode::trace_gen_actions>(in, parse_stack);
+	} catch (const bbcode::argument_error &error) {
+		bbcode::trace::annotated_code diagnosis;
+		diagnosis.code = document;
+		diagnosis.annotations.insert(bbcode::trace::code_annotation(error.culprit, bbcode::trace::k_error));
+		std::ostringstream description;
+		description << "Tag argument <span style='bbcode_error_argument'>" << entity_quote_escape(error.argument);
+		description << "</span> didn't fit the expected format. " << error.message;
+		throw bbcode::trace::parse_error(description.str(), diagnosis);
+	} catch (const tao::pegtl::parse_error &error) {
+		std::cout << "Aborted with error `" << error.what() << "` and parse stack:" << std::endl;
+		for(const bbcode::trace::tag &tag : parse_stack) {
+			std::cout << tag << std::endl;
 		}
-	};
-	template<typename tag_name, char quote_char> struct annotation_actions<quoted_attr_inside<tag_name, quote_char>> {
-		template< typename matched_a > static void apply( const matched_a& in ) {
-			std::cout << "_" << quote_char << "_" << in.string() << "_";
+
+
+		bbcode::trace::annotated_code diagnosis;
+		diagnosis.code = document;
+
+		std::string failure_point = document.substr(error.positions[0].byte);		
+		if (failure_point.empty()) {
+			std::ostringstream description;
+			description << "Looks like the post ended too soon. These tags still need to be closed:<ul>" << std::endl;
+			for(const bbcode::trace::tag &tag : parse_stack) {
+				diagnosis.annotations.insert(bbcode::trace::code_annotation(tag.pos, bbcode::trace::k_context));
+				description << "<li>" << entity_quote_escape(tag.text) << "</li>" << std::endl;
+			}
+			description << "</ul>" << std::endl;
+			throw bbcode::trace::parse_error(description.str(), diagnosis);
 		}
-	};
-	template<typename tag_name> struct annotation_actions<unquoted_attr<tag_name>> {
-		template< typename matched_a > static void apply( const matched_a& in ) {
-			std::cout << "__" << in.string() << "_";
+		
+		bbcode::tag_identity identified_tag = bbcode::identify<bbcode::generated::any_close_tag>(failure_point);
+		if (identified_tag.type) {
+			diagnosis.annotations.insert(bbcode::trace::code_annotation(
+				error.positions[0].line,
+				error.positions[0].byte_in_line,
+				identified_tag.length,
+				bbcode::trace::k_error
+			));
+			
+			std::ostringstream context_list;
+			bool found_matching_open_tag = false;
+			bbcode::trace::tag matching_open_tag("invalid","invalid",-1,-1,-1);
+			for(auto it = parse_stack.rbegin(); it != parse_stack.rend(); it++) {
+				if (it->name == identified_tag.name) {
+					diagnosis.annotations.insert(bbcode::trace::code_annotation(it->pos, bbcode::trace::k_counterpart));
+					matching_open_tag = *it;
+					found_matching_open_tag = true;
+					break;
+					
+				}
+				diagnosis.annotations.insert(bbcode::trace::code_annotation(it->pos, bbcode::trace::k_context));
+				context_list << "<li>" << entity_quote_escape(it->text) << "</li>" << std::endl;
+			}
+			std::ostringstream description;
+			description << "Unexpected close tag [/" << entity_quote_escape(identified_tag.name) << "]. ";
+			if (found_matching_open_tag) {
+				description << "If you meant for it to close " << entity_quote_escape(matching_open_tag.text) << ", you need to close these first:";
+			} else {
+				description << "None of the currently open tags seem to match it:";
+			}
+			description << "<ul>" << std::endl << context_list.str() << "</ul>" << std::endl;
+			
+			throw bbcode::trace::parse_error(description.str(), diagnosis);
 		}
-	};
-	template<typename tag_name> struct annotation_actions<greedy_tag_contents<tag_name>> {
-		template< typename matched_a > static void apply( const matched_a& in ) {
-			std::cout << "<" << in.string() << ">";
+		
+		identified_tag = bbcode::identify<bbcode::generated::start_of_any_open_tag>(failure_point);
+		if (!identified_tag.type) {
+			identified_tag.length = failure_point.substr(0,16).length();
 		}
-	};
-	template<typename tag_name> struct annotation_actions<close_tag<tag_name>> {
-		template< typename matched_a > static void apply( const matched_a& in ) {
-			std::cout << "`" << in.string() << "`";
+		diagnosis.annotations.insert(bbcode::trace::code_annotation(
+			error.positions[0].line,
+			error.positions[0].byte_in_line,
+			identified_tag.length,
+			bbcode::trace::k_error
+		));
+		std::ostringstream description;
+		switch(identified_tag.type) {
+			case bbcode::k_simple:
+				// I think the only situation where this can happen is with greedy tags.
+				description << "[" << entity_quote_escape(identified_tag.name) << "] tag ";
+				description << "doesn't seem to have a matching [/" << entity_quote_escape(identified_tag.name) << "].";
+				break;
+			case bbcode::k_wrong_simple:
+				description << "[" << entity_quote_escape(identified_tag.name) << "] tag requires an argument.";
+				break;
+			case bbcode::k_attr:
+				description << "Couldn't find a valid end of your " << entity_quote_escape(identified_tag.name) << " tag's argument. ";
+				description << "Remember, there are special rules to using quotes/apostrophes/close-brackets inside a tag argument.";
+				break;
+			case bbcode::k_wrong_attr:
+				description << "[" << entity_quote_escape(identified_tag.name) << "] tag doesn't expect an argument.";
+				break;
+			default:
+				description << "Invalid bbcode detected, but not sure exactly what's wrong. Contact technical support.<br/>";
+				description << entity_quote_escape(error.what());
+				break;
 		}
-	};
-	
+		throw bbcode::trace::parse_error(description.str(), diagnosis);
+	}
 }
