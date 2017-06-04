@@ -76,14 +76,14 @@ namespace bbcode {
 	}
 
 	template<> struct http_gen_actions<untagged_content> {
-		template< typename matched_a > static void apply( const matched_a& in, std::vector<trace::tag> &tag_stack ) {
-			std::cout << entity_escape(in.string());
+		template< typename matched_a > static void apply( const matched_a& in, std::ostream &out ) {
+			out << entity_escape(in.string());
 		}
 	};
 
 	template<char const* text> struct generate_text {
-		template< typename matched_a > static void apply( const matched_a& in, std::vector<trace::tag> &tag_stack ) {
-			std::cout << text;
+		template< typename matched_a > static void apply( const matched_a& in, std::ostream &out ) {
+			out << text;
 		}
 	};
 	
@@ -128,13 +128,13 @@ namespace bbcode {
 
 	template<char const* text, char const* needle, char const* replacement_regex = nullptr, char const* regex_error = nullptr, char to_dedup = 0> struct generate_text_with_replacement {
 		
-		template< typename matched_a > static void apply( const matched_a& in, std::vector<trace::tag> &tag_stack ) {
+		template< typename matched_a > static void apply( const matched_a& in, std::ostream &out ) {
 			std::string replacement = replacement_text(in.line(), in.byte_in_line(), in.string(), replacement_regex, regex_error, to_dedup);
 			// Sub replacement into text.
 			std::string out_text(text);
 			constexpr size_t needle_length = strlen(needle);
 			replace_all(out_text, needle, needle_length, entity_escape(replacement));
-			std::cout << out_text;
+			out << out_text;
 		}
 	};
 	

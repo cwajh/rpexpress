@@ -96,12 +96,6 @@ namespace bbcode {
 			description << "</span> didn't fit the expected format. " << error.message;
 			throw trace::parse_error(description.str(), diagnosis);
 		} catch (const tao::pegtl::parse_error &error) {
-			std::cout << "Aborted with error `" << error.what() << "` and parse stack:" << std::endl;
-			for(const trace::tag &tag : parse_stack) {
-				std::cout << tag << std::endl;
-			}
-
-
 			trace::annotated_code diagnosis;
 			diagnosis.code = document;
 
@@ -187,15 +181,16 @@ namespace bbcode {
 			throw trace::parse_error(description.str(), diagnosis);
 		}
 	}
-	
-	void print_html_for(const std::string &document) {
-		tao::pegtl::string_input<> in(document);
-		std::vector<bbcode::trace::tag> aaaaa;
-		tao::pegtl::parse <bbcode::document, bbcode::http_gen_actions>(in, aaaaa);
-	}
 
 	block::block() {}
 	block::block(const std::string &code) : code(code) {
-		
+		check_validity(code);
 	};
+	std::string block::html() const {
+		check_validity(code);
+		tao::pegtl::string_input<> in(code);
+		std::ostringstream html_stream;
+		tao::pegtl::parse <bbcode::document, bbcode::http_gen_actions>(in, html_stream);
+		return html_stream.str();
+	}
 }

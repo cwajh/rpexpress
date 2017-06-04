@@ -16,16 +16,15 @@ int main(int argc, char* argv[]) {
 	
 	ifstream t(argv[1]);
 	string bbcode_doc((istreambuf_iterator<char>(t)), istreambuf_iterator<char>());	
+	bbcode::block block;
 	try {
-		bbcode::check_validity(bbcode_doc);
+		block = bbcode::block(bbcode_doc);
 	} catch (const bbcode::trace::parse_error &error) {
 		cerr << error.what() << endl;
 		cerr << error.html_annotations << endl;
 		return 1;
 	}
-	
-	bbcode::print_html_for(bbcode_doc);
-	cout << endl;
+	cout << block.html() << endl;
 	return 0;
 }
 
