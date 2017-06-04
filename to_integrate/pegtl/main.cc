@@ -24,9 +24,7 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
 	
-	std::vector<bbcode::trace::tag> aaaaa;
-	tao::pegtl::file_input<> in2(argv[1]);
-	tao::pegtl::parse <bbcode::document, bbcode::http_gen_actions>(in2, aaaaa);
+	bbcode::print_html_for(bbcode_doc);
 	cout << endl;
 	return 0;
 }
