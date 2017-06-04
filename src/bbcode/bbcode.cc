@@ -46,7 +46,7 @@ namespace bbcode {
 	template<typename entity> tag_identity identify(std::string &snippet) {
 		tag_identity identified_tag {"", k_unknown};
 		try {
-			tao::pegtl::string_input<> in(snippet);
+			tao::pegtl::string_input<> in(snippet, "inline");
 			tao::pegtl::parse <tao::pegtl::must<entity>, identifier_actions>(in, identified_tag);
 			return identified_tag;
 		} catch (const tao::pegtl::parse_error &error) {
@@ -82,14 +82,14 @@ namespace bbcode {
 		return escaped.str();
 	}
 
-	void check_validity(const std::string &document) {
-		tao::pegtl::string_input<> in(document);
+	void check_validity(const std::string &in_string) {
+		tao::pegtl::string_input<> in(in_string, "inline");
 		std::vector<trace::tag> parse_stack;
 		try {
 			tao::pegtl::parse <bbcode::document, trace_gen_actions>(in, parse_stack);
 		} catch (const argument_error &error) {
 			trace::annotated_code diagnosis;
-			diagnosis.code = document;
+			diagnosis.code = in_string;
 			diagnosis.annotations.insert(trace::code_annotation(error.culprit, trace::k_error));
 			std::ostringstream description;
 			description << "Tag argument <span style='bbcode_error_argument'>" << entity_quote_escape(error.argument);
@@ -97,9 +97,9 @@ namespace bbcode {
 			throw trace::parse_error(description.str(), diagnosis);
 		} catch (const tao::pegtl::parse_error &error) {
 			trace::annotated_code diagnosis;
-			diagnosis.code = document;
+			diagnosis.code = in_string;
 
-			std::string failure_point = document.substr(error.positions[0].byte);		
+			std::string failure_point = in_string.substr(error.positions[0].byte);		
 			if (failure_point.empty()) {
 				std::ostringstream description;
 				description << "Looks like the post ended too soon. These tags still need to be closed:<ul>" << std::endl;
@@ -188,7 +188,7 @@ namespace bbcode {
 	};
 	std::string block::html() const {
 		check_validity(code);
-		tao::pegtl::string_input<> in(code);
+		tao::pegtl::string_input<> in(code, "inline");
 		std::ostringstream html_stream;
 		tao::pegtl::parse <bbcode::document, bbcode::http_gen_actions>(in, html_stream);
 		return html_stream.str();

@@ -9,6 +9,7 @@ namespace bbcode {
 	struct block {
 		std::string code;
 		std::string html() const;
+		std::string whtml() const;
 		block();
 		block(const std::string &code);
 	};

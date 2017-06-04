@@ -61,10 +61,10 @@ namespace bbcode { namespace trace {
 	
 	std::string annotated_code::html() const {
 		codepos current_pos(1,0,0);
-		std::priority_queue<int, std::vector<int>, std::greater<int>> annotation_ends;
+		std::priority_queue<unsigned int, std::vector<unsigned int>, std::greater<unsigned int>> annotation_ends;
 		std::ostringstream escaped;
 		escaped << "<pre>" << std::endl;
-		for(int i=0; i<code.length(); ++i) {
+		for(unsigned int i=0; i < code.length(); ++i) {
 			// TODO(cwajh): support multiple annotations in the same place.
 			while(annotation_ends.size() > 0 && annotation_ends.top() <= i) {
 				annotation_ends.pop();

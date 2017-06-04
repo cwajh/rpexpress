@@ -6,6 +6,7 @@
 #include <odb/pgsql/traits.hxx>
 
 #include "../cwajh.hh"
+#include "../bbcode/bbcode.hh"
 
 namespace odb
 {
@@ -25,6 +26,23 @@ namespace odb
 			}
 			static void set_image(details::buffer &b, std::size_t &n, bool &is_null, const std::wstring &v) {
 				std::string enc_v = w2s(v);
+				value_traits<std::string, id_string>::set_image(b, n, is_null, enc_v);
+			}
+		};
+		template <>
+		class value_traits<bbcode::block, id_string>
+		{
+		public:
+			typedef bbcode::block value_type;
+			typedef value_type query_type;
+			typedef details::buffer image_type;
+			static void set_value(bbcode::block &v, const details::buffer &b, std::size_t n, bool is_null) {
+				std::string enc_v;
+				value_traits<std::string, id_string>::set_value(enc_v, b, n, is_null);
+				v.code = (enc_v);
+			}
+			static void set_image(details::buffer &b, std::size_t &n, bool &is_null, const bbcode::block &v) {
+				std::string enc_v = v.code;
 				value_traits<std::string, id_string>::set_image(b, n, is_null, enc_v);
 			}
 		};
