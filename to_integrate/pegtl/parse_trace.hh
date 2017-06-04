@@ -134,6 +134,11 @@ namespace bbcode {
 					}
 					current_pos.column++;
 				}
+				// close out
+				while(annotation_ends.size() > 0) {
+					annotation_ends.pop();
+					escaped << "</span>";
+				}
 				escaped << "</pre>" << std::endl;
 				return escaped.str();
 			};
