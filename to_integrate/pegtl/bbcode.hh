@@ -126,4 +126,5 @@ namespace bbcode {
 			std::cout << "`" << in.string() << "`";
 		}
 	};
+	
 }

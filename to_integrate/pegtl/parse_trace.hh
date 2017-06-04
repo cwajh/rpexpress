@@ -1,10 +1,11 @@
-#ifndef INCLUDE_GUARD_FOR_BBCODE_PARSE_TREE_HH
-#define INCLUDE_GUARD_FOR_BBCODE_PARSE_TREE_HH
+#ifndef INCLUDE_GUARD_FOR_BBCODE_PARSE_TRACE_HH
+#define INCLUDE_GUARD_FOR_BBCODE_PARSE_TRACE_HH
 
 #include <functional>
 #include <iostream>
 #include <queue>
 #include <set>
+#include <stdexcept>
 
 namespace bbcode {
 	namespace trace {
@@ -38,6 +39,11 @@ namespace bbcode {
 				return !(*this < b);
 			}
 		};
+		
+		std::ostream& operator<<(std::ostream &out, const codepos &pos) {
+			out << pos.line << ":" << pos.column;
+			return out;
+		}
 
 		struct tag {
 			std::string name;
@@ -52,6 +58,12 @@ namespace bbcode {
 			closed_tag(const tag &base, int close_line, int close_column, int close_len) :
 				tag(base), close_pos(close_line, close_column, close_len) {};
 		};
+
+		std::ostream& operator<<(std::ostream &out, const tag &t)
+		{
+			out << "A [" << t.name << "] tag, called `" << t.text << "`, at " << t.pos;
+			return out;
+		}
 		
 		enum annotation_type {
 			k_invalid,
@@ -65,12 +77,16 @@ namespace bbcode {
 			switch(type) {
 			case k_error:
 				out << "error";
+				break;
 			case k_counterpart:
 				out << "counterpart";
+				break;
 			case k_context:
 				out << "context";
+				break;
 			default:
 				out << "invalid_annotation_type";
+				break;
 			}
 			return out;
 		}
@@ -83,15 +99,19 @@ namespace bbcode {
 		struct annotated_code {
 			std::string code;
 			std::set<code_annotation> annotations;
-			std::string html() {
-				codepos current_pos(1,1,0);
+			std::string html() const 	{
+				codepos current_pos(1,0,0);
 				std::priority_queue<int, std::vector<int>, std::greater<int>> annotation_ends;
 				std::ostringstream escaped;
 				escaped << "<pre>" << std::endl;
 				for(int i=0; i<code.length(); ++i) {
 					// TODO(cwajh): support multiple annotations in the same place.
+					while(annotation_ends.size() > 0 && annotation_ends.top() <= i) {
+						annotation_ends.pop();
+						escaped << "</span>";
+					}
 					auto it_annotation = annotations.find(code_annotation(current_pos, k_invalid));
-					if(it_annotation != annotations.end()) {
+					if(it_annotation != annotations.end() && (it_annotation->len > 0)) {
 						escaped << "<span style='bbcode_annotation_" << (it_annotation->type) << "'>";
 						annotation_ends.push(i + (it_annotation->len));
 					}
@@ -107,14 +127,10 @@ namespace bbcode {
 						break;
 					case '\n':
 						current_pos.line++;
-						current_pos.column = 0;
+						current_pos.column = -1;
 						// fall through
 					default:
 						escaped << code[i];
-					}
-					while(annotation_ends.top() <= i) {
-						annotation_ends.pop();
-						escaped << "</span>";
 					}
 					current_pos.column++;
 				}
@@ -122,11 +138,16 @@ namespace bbcode {
 				return escaped.str();
 			};
 		};
+		class parse_error : public std::runtime_error {
+		public:
+			std::string html_annotations;
+			parse_error(const std::string &description, const annotated_code &annotations) : std::runtime_error(description), html_annotations(annotations.html()) {};
+		};
 		
 	}
 }
 
-#endif /* INCLUDE_GUARD_FOR_BBCODE_PARSE_TREE_HH */
+#endif /* INCLUDE_GUARD_FOR_BBCODE_PARSE_TRACE_HH */
 
 /*
 

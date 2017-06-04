@@ -23,6 +23,7 @@ ATTR_TAG(style,
 	"span", "class='bbcode_style_&attr;'")
 
 // Tags that gobble up the text inside, instead of letting it be interpreted as more BBCode.
+// The &body; macro will be replaced by the inside text.
 // The regex is there to limit possible arguments, but in the case of greedy tags, it's optional.
 GREEDY_TAG_UNCHECKED(code,"<pre>&body;</pre>")
 GREEDY_TAG(
@@ -30,16 +31,4 @@ GREEDY_TAG(
 	"[A-Za-z0-9_-]*", "Youtube video ID looks invalid (was expecting something like [youtube]4OjsOxEJRuY[/youtube]).",
 	"<iframe width='560' height='315' src='https://www.youtube.com/embed/&body;' frameborder='0' allowfullscreen></iframe>")
 
-/*
-
-// note well: &attr;/&body; will ALWAYS be entity-escaped.
-// a &rawattr; could be impl'd but why would you need it???? defeats the purpose
-ATTR_TAG(style,"^[A-Za-z0-9_-]*$","span","class='bbcode_style_&attr;'")
-GREEDY_TAG(
-	youtube,
-	"^[A-Za-z0-9_-]*$",
-	"<iframe width='560' height='315' src='https://www.youtube.com/embed/&body;' frameborder='0' allowfullscreen></iframe>")
-ATTR_TAG(url,".*","a","href='&attr;' ref='nofollow'")
-GREEDY_TAG(code,"<pre>&body;</pre>")
-
-*/
+// These &attr; and &body; tags will always be HTML entity-escaped before being substituted in.

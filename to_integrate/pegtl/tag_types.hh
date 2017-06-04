@@ -8,6 +8,8 @@ namespace bbcode {
 	using namespace tao::pegtl;
 	using namespace tao::pegtl::ascii;
 	
+	enum preview_type { k_unknown = 0, k_simple, k_attr, k_wrong_simple, k_wrong_attr, k_close, k_wrong_close };
+	
 	class parse_error : public std::runtime_error {
 	};
 
