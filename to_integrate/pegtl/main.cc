@@ -17,7 +17,7 @@ int main(int argc, char* argv[]) {
 	ifstream t(argv[1]);
 	string bbcode_doc((istreambuf_iterator<char>(t)), istreambuf_iterator<char>());	
 	try {
-		check_validity(bbcode_doc);
+		bbcode::check_validity(bbcode_doc);
 	} catch (const bbcode::trace::parse_error &error) {
 		cerr << error.what() << endl;
 		cerr << error.html_annotations << endl;
