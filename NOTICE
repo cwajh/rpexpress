@@ -1,0 +1,10 @@
+This project uses ODB.
+
+ODB's licensing scheme is kind of weird.
+
+You can use it under the GPL.
+Or, they'll give you a permissive license for use cases where ODB's output is < 10000 LoC.
+Or, you can buy a license.
+
+I'd rather license my code more broadly than the GPL for now.
+Thus: I'm enforcing the <10000 LoC restriction so that YOU can request a permissive license from ODB if you so choose.
