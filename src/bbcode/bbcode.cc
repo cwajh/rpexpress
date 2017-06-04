@@ -1,35 +1,13 @@
+#include <iostream>
 #include <tao/pegtl.hpp>
 
-// TODO(cwajh): switch for arbitrary ostream
-#include <iostream>
+#include "../cwajh.hh"
 
-/*
-A slightly stricter BBCode variant, in that it's actually parsed instead of regex'd.
-
-[blah]what[/blah]
-or
-[bleh] (self-closing)
-
-blah can be
-
-[foo]
-or
-[bar=baz]
-or
-[bar="quux1"]
-or
-[bar='quux2']
-
-baz can't have "'] in it
-quux1 and quux2 use psql-style quote escaping ("a""b" = a"b)
-
-*/
 #include "bbcode.hh"
 #include "tag_types.hh"
 #include "generated_tag_patterns.hh"
 #include "action_types.hh"
 #include "generated_actions.hh"
-//#include "generated_actions.hh"
 
 namespace bbcode {
 	using namespace tao::pegtl;
@@ -192,5 +170,8 @@ namespace bbcode {
 		std::ostringstream html_stream;
 		tao::pegtl::parse <bbcode::document, bbcode::http_gen_actions>(in, html_stream);
 		return html_stream.str();
+	}
+	std::wstring block::whtml() const {
+		return s2w(html());
 	}
 }
