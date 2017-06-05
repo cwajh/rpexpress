@@ -24,6 +24,7 @@ GEN_HEADERS
 		bool has_next_img;
 		// From query args.
 		long image_index;
+		bool editor;
 	} muse_info;
 
 	odb::core::transaction txn (env.p_odb->begin());
@@ -63,6 +64,15 @@ GEN_HEADERS
 		}
 	}
 	
+	auto mode_param = env.get.find(L"mode");
+	if (mode_param != env.get.end()) {
+		if(mode_param->second == L"edit" && muse_info.found
+			&& muse_info.user && muse_info.muse.owner 
+			&& muse_info.user->mun_id == muse_info.muse.owner->mun_id) {
+			muse_info.editor = true;
+		}
+	}
+
 	auto img_param = env.get.find(L"img");
 	if (img_param == env.get.end()) {
 		muse_info.image_index = 0;
@@ -140,14 +150,26 @@ END_GEN_HEADERS
 			<div#muse_profile &{{ params.muse.description }}& >
 			<dl.stat_sheet#major_stats
 				&&	for (auto trait : params.major_traits) {
-				<dt.stat_name &{{ trait.name }}&> <dd.stat_value &{{ trait.value.whtml() }}&>
+					<dt.stat_name &{{ trait.name }}&> <dd.stat_value 
+					&& if (params.editor) {
+						<textarea &{{ trait.value.whtml() }}& >
+					&& } else {
+						&{{ trait.value.whtml() }}&
+					&& }
+					>
 				&&	}
 			>
 		>
 		< div#minor_pane
 			< dl.stat_sheet#minor_stats
 				<{{ for (auto trait : params.minor_traits) { }}>
-				<dt.stat_name &{{ trait.name }}&> <dd.stat_value &{{ trait.value.whtml() }}&>
+					<dt.stat_name &{{ trait.name }}&> <dd.stat_value 
+					&& if (params.editor) {
+						<textarea &{{ trait.value.whtml() }}& >
+					&& } else {
+						&{{ trait.value.whtml() }}&
+					&& }
+					>
 				<{{ } }}>
 			>
 		>
