@@ -1,1 +1,15 @@
+# gedit temporary files
 *~
+
+# generated files
+/src/**/*.[oda]
+/src/**/*.odb.hh
+/src/**/*.odb.ii
+/src/**/*.odb.cc
+/src/**/*.odbsql
+/src/db/rpexpress.hh
+/src/copal/*.hh
+/src/paths/cplpaths.hh
+
+# TODO(cwajh): compile to some better name?
+/src/top.fcgi
