@@ -1,0 +1,161 @@
+@import url(https://fonts.googleapis.com/css?family=Lato);
+
+/* 2F2C33 F0E9C8 9580BA F0736A 5E3F3D */
+
+body {
+	font-family: 'Lato', 'Arial', sans-serif;
+	background-color: #F0E9C8;
+	color: #2F2C33;
+}
+
+a {
+	color: #5E3F3D;
+}
+
+.user_box {
+	position:absolute;
+	top:2px;
+	right:2px;
+	border:1px solid #5E3F3D;
+	font-size:smaller;
+	text-align: center;
+}
+
+.user_box input[type="submit"] {
+	background: none;
+	border: none;
+	display: inline;
+	font: inherit;
+	margin: 0;
+	padding: 0;
+	outline: none;
+	outline-offset: 0;
+	cursor: pointer;
+	font-weight: bold;
+}
+.user_box input[type="submit"]:hover {
+	color: #5E3F3D;	
+}
+
+.doc_with_major_pane nav#intramuse_nav {
+	margin-left:30%;
+}
+nav#intramuse_nav {
+	text-align:center;
+}
+nav#intramuse_nav ul {
+	display:inline-block;
+	border:1px solid #5E3F3D;
+	background-color: #F0736A;
+	padding:2px 3px;
+}
+li.intramuse_nav_item {
+	list-style:none;
+	display:inline;
+}
+
+li.intramuse_nav_item:after {
+	content: " \2022";
+}
+li.intramuse_nav_item:last-child:after {
+	content: none;
+}
+
+#major_pane {
+	position:fixed;
+	left:1px;
+	top:0px;
+	bottom:0px;
+	width:33%;
+	margin-right: 24px;
+	background: url(https://i.imgur.com/f7neOkl.png);
+	background-size: 24px 22px;
+	background-repeat: repeat-y;
+	background-position:right;
+	overflow-y:auto;
+}
+
+h1#muse_name {
+	text-align:center;
+}
+
+#major_pane > * {
+	width: calc(100% - 25px);
+}
+
+#muse_portraits {
+	/* Make images size to this pane's size. */
+	position: relative;
+}
+#muse_portraits img {
+	vertical-align:middle;
+}
+#muse_portraits .prev_nav {
+	padding-left:1%;
+	width:5%;
+}
+#muse_portraits .next_nav {
+	width:5%;
+	padding-right:1%;
+}
+#muse_portraits #muse_portrait {
+	width:88%;
+}
+#minor_pane {
+	margin-left: 33%;
+}
+
+dl.stat_sheet dt {
+	font-weight:bold;
+}
+dl.stat_sheet dt:after {
+	content: ":";
+}
+dl.stat_sheet dd {
+	margin-bottom:1em;
+}
+dl.stat_sheet dd textarea{
+	width: 100%;
+}
+#muse_profile {
+	font-size: 110%;
+	font-style: italic;
+	text-align: center;	
+}
+br.nl {
+	margin-bottom:1em;
+}
+
+#gallery_items {
+	/* display:table;
+	border-collapse:collapse; */
+}
+.gallery_item {
+	clear:both;
+	border:1px solid black;
+}
+li.gallery_item {
+	list-style:none;
+	border-left: 1px solid black;
+}
+.gallery_item_content {
+	/*display:table-cell;*/
+	float:left;
+	max-width:70%;
+	max-height:60vh;
+}
+.gallery_item_text {
+	/*display:table-cell;*/
+}
+
+ul.gallery_item_tags {
+	display:inline-block;	
+}
+li.gallery_item_tag {
+	list-style:none;
+	display:inline;
+}
+
+li.gallery_item_tag:before {
+	content: "#";
+}

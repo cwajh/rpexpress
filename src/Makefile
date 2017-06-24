@@ -41,4 +41,4 @@ clean: clean_copal clean_paths clean_odb
 	rm -f top.fcgi *.o *.d $(TOP_OBJECTS) $(TOP_DEPFILES)
 
 install:
-	killall testing.fcgi; cp top.fcgi ~/testing.fcgi
+	killall testing.fcgi; cp top.fcgi ~/testing.fcgi; cp ../static/theme.css ~/www/static/theme.css
