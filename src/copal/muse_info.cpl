@@ -10,26 +10,116 @@
 #include "db/rpexpress.hh"
 #include "db/rpexpress.odb.hh"
 
+/*
+	TODO(cwajh): Post handling logic
+	Deletes are their OWN post, but all the other stuff still gets submitted.
+	So if you typed some stuff, and then hit DELETE, it will only remove the deleted line, but return you to an editor form with your other changes intact.
+	(via continuation, same as in an error case...)
+	what about adds? not one at a time, clearly. +1/+5 buttons which reload and increment a GET parameter. again, continuing.
+*/
+
+PERFORM_POST
+	using namespace std;
+
+	map<db::pkey_t, wstring> trait_bodies;
+	// First, populate the continuation.
+	for(auto &field : fields) {
+		if(has_prefix(field.first, L"trait_body_")) {
+			env.post_outcome[field.first] = field.second;
+			try {
+				trait_bodies[stoll(field.first.substr(11))] = field.second;
+			} catch (invalid_argument e) {
+				//TODO(cwajh): assert log
+			} catch (out_of_range e) {
+				//TODO(cwajh): assert log
+			}
+		}
+	}
+	wstring retry_path = env.path + L"?mode=edit";
+
+	odb::core::transaction txn (env.p_odb->begin());
+	P<db::mun> user = current_user(env.p_odb, env.session);
+	if (!user) {
+		// TODO(cwajh): can the login page do a continuation back into a post attempt?
+		env.post_error = L"You don't seem to be signed in. Only signed in users can edit muse pages.";
+		return retry_path;
+	}
+	db::muse muse;
+	{
+		typedef odb::query<db::muse> q_muse;
+		auto result = env.p_odb->template query<db::muse>(q_muse::username == muse_for_path(env.path));
+		if(result.empty()) {
+			env.post_error = L"Tried to update a muse named ";
+			env.post_error += muse_for_path(env.path) + L" but there's no such muse?";
+			return L""; // TODO(cwajh): a proper "global error" page.
+		}
+		if(result.size() > 1) {
+			//TODO(cwajh): assert log
+		}
+		muse = *(result.begin());
+	}
+	if (!muse.owner) {
+		env.post_error = L"Muse with ID ";
+		env.post_error += std::to_wstring(muse.muse_id) + L" has no owner?";
+		return L"";
+	}
+	if (muse.owner->mun_id != user->mun_id) {
+		env.post_error = L"The muse you were trying to edit, named ";
+		env.post_error += muse_for_path(env.path) + L", doesn't seem to belong to you.";
+		return retry_path;
+	}
+	// And now, update can finally begin.
+	{
+		typedef odb::query<db::trait> q_trait;
+		auto result = env.p_odb->template query<db::trait>(
+			(q_trait::character == q_trait::_val(muse))
+			+ "ORDER BY" + q_trait::position
+		);
+		for(auto &trait : result) {
+			auto post_it = trait_bodies.find(trait.trait_id);
+			if (post_it != trait_bodies.end()) {
+				trait.value.code = w2s(post_it->second);
+				env.p_odb->update(trait);
+				// At the end of the iteration, trait_bodies should be emptied.
+				trait_bodies.erase(post_it);
+			}
+		}
+		if(!trait_bodies.empty()) {
+			env.post_error = L"Some traits were scheduled to be written but don't exist for this muse.<br/>";
+			for(auto &unwritten_trait : trait_bodies)
+			{
+				env.post_error += std::to_wstring(unwritten_trait.first) + L";";
+			}
+			txn.rollback();
+			return retry_path;
+		}
+	}
+	txn.commit();
+	return env.path; // back to the profile page from whence you came
+END_PERFORM_POST
+
 GEN_HEADERS
 	using namespace std;
 	struct {
 		P<db::mun> user;
+		wstring path;
 		wstring path_with_query;
-		bool found;
+		bool found = false;
 		db::muse muse;
 		vector<db::trait> major_traits;
 		vector<db::trait> minor_traits;
 		db::artwork current_image;
-		bool has_prev_img;
-		bool has_next_img;
+		bool has_prev_img = false;
+		bool has_next_img = false;
 		// From query args.
-		long image_index;
-		bool editor;
+		long image_index = 0;
+		bool editor = false;
 	} muse_info;
 
 	odb::core::transaction txn (env.p_odb->begin());
 
 	muse_info.user = current_user(env.p_odb, env.session);
+	muse_info.path = env.path;
 	muse_info.path_with_query = copal::user_box::path_with_query(env.path, env.get);
 
 	{
@@ -63,7 +153,8 @@ GEN_HEADERS
 			}
 		}
 	}
-	
+
+	muse_info.editor = false;
 	auto mode_param = env.get.find(L"mode");
 	if (mode_param != env.get.end()) {
 		if(mode_param->second == L"edit" && muse_info.found
@@ -122,6 +213,9 @@ END_GEN_HEADERS
 	< body.doc_with_major_pane
 		<@include user_box params@>
 		<@include nav_bar params@>
+		&& if (params.editor) {
+			<form(method='post' action=&'{ params.path }'&) &{{ util.form_tokens(params.path) }}&
+		&& }
 		< div#major_pane
 
 			< h1#muse_name &{{ params.muse.name }}&>
@@ -150,9 +244,12 @@ END_GEN_HEADERS
 			<div#muse_profile &{{ params.muse.description }}& >
 			<dl.stat_sheet#major_stats
 				&&	for (auto trait : params.major_traits) {
+					&& if (params.editor) {
+						<div(style='float:right') Delete >
+					&& }
 					<dt.stat_name &{{ trait.name }}&> <dd.stat_value 
 					&& if (params.editor) {
-						<textarea &{{ trait.value.whtml() }}& >
+						<textarea(name='trait_body_&{{trait.trait_id}}&') &{{ trait.value.whtml_escaped_code() }}&>
 					&& } else {
 						&{{ trait.value.whtml() }}&
 					&& }
@@ -165,13 +262,19 @@ END_GEN_HEADERS
 				<{{ for (auto trait : params.minor_traits) { }}>
 					<dt.stat_name &{{ trait.name }}&> <dd.stat_value 
 					&& if (params.editor) {
-						<textarea &{{ trait.value.whtml() }}& >
+						<textarea(name='trait_body_&{{trait.trait_id}}&') &{{ trait.value.whtml_escaped_code() }}&>
 					&& } else {
 						&{{ trait.value.whtml() }}&
 					&& }
 					>
 				<{{ } }}>
 			>
+			&& if (params.editor) {
+			<input(type='submit' value='Save Changes') >
+			&& }
 		>
+		&& if (params.editor) {
+		>
+		&& }
 	>
 >

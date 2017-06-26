@@ -174,4 +174,8 @@ namespace bbcode {
 	std::wstring block::whtml() const {
 		return s2w(html());
 	}
+
+	std::wstring block::whtml_escaped_code() const {
+		return s2w(entity_quote_escape(code));
+	}
 }

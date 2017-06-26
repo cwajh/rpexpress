@@ -32,6 +32,7 @@ namespace bbcode {
 		std::string code;
 		std::string html() const;
 		std::wstring whtml() const;
+		std::wstring whtml_escaped_code() const;
 		block();
 		block(const std::string &code);
 	};
