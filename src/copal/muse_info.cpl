@@ -18,6 +18,15 @@
 	what about adds? not one at a time, clearly. +1/+5 buttons which reload and increment a GET parameter. again, continuing.
 */
 
+ON_BAD_POST
+	for(auto &field : fields) {
+		if(has_prefix(field.first, L"trait_body_")) {
+			env.post_outcome[field.first] = field.second;
+		}
+	}
+	return env.path + L"?mode=edit";
+END_BAD_POST
+
 PERFORM_POST
 	using namespace std;
 
