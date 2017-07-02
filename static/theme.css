@@ -37,6 +37,34 @@ a {
 	color: #5E3F3D;	
 }
 
+.post_error {
+	border: 1px black;
+	background-color: pink;
+}
+
+.doc_with_major_pane .post_error {
+	margin-left:34%;
+}
+
+.bbcode_annotated_code {
+	background-color: white;
+	color: black;
+	border: 1px black;
+}
+
+.bbcode_annotation_context {
+	font-weight: bold;
+	color: black;
+}
+.bbcode_annotation_error {
+	font-weight: bold;
+	color: orange;
+}
+.bbcode_annotation_counterpart {
+	font-weight: bold;
+	color: blue;
+}
+
 .doc_with_major_pane nav#intramuse_nav {
 	margin-left:30%;
 }

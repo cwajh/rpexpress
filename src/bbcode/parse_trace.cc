@@ -63,7 +63,7 @@ namespace bbcode { namespace trace {
 		codepos current_pos(1,0,0);
 		std::priority_queue<unsigned int, std::vector<unsigned int>, std::greater<unsigned int>> annotation_ends;
 		std::ostringstream escaped;
-		escaped << "<pre>" << std::endl;
+		escaped << "<pre class='bbcode_annotated_code'>" << std::endl;
 		for(unsigned int i=0; i < code.length(); ++i) {
 			// TODO(cwajh): support multiple annotations in the same place.
 			while(annotation_ends.size() > 0 && annotation_ends.top() <= i) {
@@ -72,7 +72,7 @@ namespace bbcode { namespace trace {
 			}
 			auto it_annotation = annotations.find(code_annotation(current_pos, k_invalid));
 			if(it_annotation != annotations.end() && (it_annotation->len > 0)) {
-				escaped << "<span style='bbcode_annotation_" << (it_annotation->type) << "'>";
+				escaped << "<span class='bbcode_annotation_" << (it_annotation->type) << "'>";
 				annotation_ends.push(i + (it_annotation->len));
 			}
 			switch(code[i]) {

@@ -75,5 +75,56 @@ static std::vector< std::basic_string<charT> > split(const std::basic_string<cha
     return elems;
 }
 
+inline std::string html_entity_escape(const std::string &txt) {
+	std::ostringstream escaped;
+	for(const char &ch : txt) {
+		switch(ch) {
+		case '<':
+			escaped << "&lt;";
+			break;
+		case '>':
+			escaped << "&gt;";
+			break;
+		case '&':
+			escaped << "&amp;";
+			break;
+		case '"':
+			escaped << "&quot;";
+			break;
+		case '\'':
+			escaped << "&apos;";
+			break;
+		default:
+			escaped << ch;
+		}
+	}
+	return escaped.str();
+}
+
+inline std::wstring html_entity_escape(const std::wstring &txt) {
+	std::wostringstream escaped;
+	for(const wchar_t &ch : txt) {
+		switch(ch) {
+		case L'<':
+			escaped << L"&lt;";
+			break;
+		case L'>':
+			escaped << L"&gt;";
+			break;
+		case L'&':
+			escaped << L"&amp;";
+			break;
+		case L'"':
+			escaped << L"&quot;";
+			break;
+		case L'\'':
+			escaped << L"&apos;";
+			break;
+		default:
+			escaped << ch;
+		}
+	}
+	return escaped.str();
+}
 
 #endif /*INCLUDE_GUARD_FOR_CWAJH_HH*/

@@ -70,7 +70,7 @@ namespace bbcode {
 			diagnosis.code = in_string;
 			diagnosis.annotations.insert(trace::code_annotation(error.culprit, trace::k_error));
 			std::ostringstream description;
-			description << "Tag argument <span style='bbcode_error_argument'>" << entity_quote_escape(error.argument);
+			description << "Tag argument <span class='bbcode_error_argument'>" << entity_quote_escape(error.argument);
 			description << "</span> didn't fit the expected format. " << error.message;
 			throw trace::parse_error(description.str(), diagnosis);
 		} catch (const tao::pegtl::parse_error &error) {
@@ -172,7 +172,11 @@ namespace bbcode {
 		return html_stream.str();
 	}
 	std::wstring block::whtml() const {
-		return s2w(html());
+		try {
+			return s2w(html());
+		} catch (const trace::parse_error &error) {
+			return whtml_escaped_code();
+		}
 	}
 
 	std::wstring block::whtml_escaped_code() const {

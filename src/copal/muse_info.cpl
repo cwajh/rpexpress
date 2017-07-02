@@ -87,7 +87,14 @@ PERFORM_POST
 		for(auto &trait : result) {
 			auto post_it = trait_bodies.find(trait.trait_id);
 			if (post_it != trait_bodies.end()) {
-				trait.value.code = w2s(post_it->second);
+				try {
+					trait.value = bbcode::block(w2s(post_it->second));
+				} catch (const bbcode::trace::parse_error &error) {
+					env.post_error = L"Problem parsing the BBCode for the `";
+					env.post_error += trait.name + L"` trait.";
+					env.post_outcome[L"error_annotations"] = s2w(error.what()) + s2w(error.html_annotations);
+					return retry_path;
+				}
 				env.p_odb->update(trait);
 				// At the end of the iteration, trait_bodies should be emptied.
 				trait_bodies.erase(post_it);
@@ -123,6 +130,7 @@ GEN_HEADERS
 		// From query args.
 		long image_index = 0;
 		bool editor = false;
+		wstring post_error;
 	} muse_info;
 
 	odb::core::transaction txn (env.p_odb->begin());
@@ -171,6 +179,11 @@ GEN_HEADERS
 			&& muse_info.user->mun_id == muse_info.muse.owner->mun_id) {
 			muse_info.editor = true;
 		}
+	}
+	muse_info.post_error = html_entity_escape(env.post_error);
+	if(!env.post_outcome[L"error_annotations"].empty()) {
+		muse_info.post_error += L"<br/>";
+		muse_info.post_error += env.post_outcome[L"error_annotations"];
 	}
 
 	auto img_param = env.get.find(L"img");
@@ -224,6 +237,9 @@ END_GEN_HEADERS
 		<@include nav_bar params@>
 		&& if (params.editor) {
 			<form(method='post' action=&'{ params.path }'&) &{{ util.form_tokens(params.path) }}&
+			&& if(!params.post_error.empty()) {
+				<div.post_error	&{{ params.post_error }}&>
+			&& }
 		&& }
 		< div#major_pane
 
