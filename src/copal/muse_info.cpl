@@ -161,6 +161,12 @@ GEN_HEADERS
 			+ "ORDER BY" + q_trait::position
 		);
 		for(auto &trait : result) {
+			// DO NOT PERSIST THESE; they have dirty data.
+			auto saved_trait = env.post_outcome.find(wstring(L"trait_body_") + to_wstring(trait.trait_id));
+			if(saved_trait != env.post_outcome.end()) {
+				// bypass bbcode validity check. a continuation may be BECAUSE of invalid code!
+				trait.value.code = w2s(saved_trait->second);
+			}
 			if(trait.category == db::major) {
 				muse_info.major_traits.push_back(trait);
 			} else if (trait.category == db::minor) {
