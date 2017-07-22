@@ -55,7 +55,16 @@ inline std::wstring fragment_from_url(const std::wstring &url) {
 	return std::wstring(url.c_str()+apos);
 }
 
-
+inline bool is_valid_int(const std::wstring &str) {
+	try {
+		stoi(str);
+		return true;
+	} catch (std::invalid_argument e) {
+		return false;
+	} catch (std::out_of_range e) {
+		return false;
+	}
+}
 
 // Split a string<charT>.
 // Credit: http://stackoverflow.com/a/236803

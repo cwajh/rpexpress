@@ -5,6 +5,7 @@
 #include <utility>
 #include <regex>
 #include <path_info.hh>
+#include <set>
 #include <user.hh>
 
 #include "db/rpexpress.hh"
@@ -17,34 +18,70 @@
 	(via continuation, same as in an error case...)
 	what about adds? not one at a time, clearly. +1/+5 buttons which reload and increment a GET parameter. again, continuing.
 */
-
-ON_BAD_POST
-	for(auto &field : fields) {
-		if(has_prefix(field.first, L"trait_body_")) {
-			env.post_outcome[field.first] = field.second;
+CPL_NAMESPACED
+struct continued_traits {
+	std::map<int, db::trait> new_majors;
+	std::map<int, db::trait> new_minors;
+	std::map<db::pkey_t, std::wstring> updated_bodies;
+	std::map<std::wstring, std::wstring> fields;
+	continued_traits(const std::map<std::wstring, std::wstring> &received_fields) {
+		for(auto &field : received_fields) {
+			if(has_prefix(field.first, L"trait_body_")) {
+				try {
+					updated_bodies[stoll(field.first.substr(11))] = field.second;
+				} catch (std::invalid_argument e) {
+					//TODO(cwajh): assert log
+				} catch (std::out_of_range e) {
+					//TODO(cwajh): assert log
+				}
+			} else if( has_prefix(field.first, L"new_maj_name_") 
+				&& is_valid_int(field.first.substr(13))) {
+				int idx = stoi(field.first.substr(13));
+				new_majors[idx].position = idx;
+				new_majors[idx].name = field.second;
+			} else if( has_prefix(field.first, L"new_min_name_") 
+				&& is_valid_int(field.first.substr(13))) {
+				int idx = stoi(field.first.substr(13));
+				new_minors[idx].position = idx;
+				new_minors[idx].name = field.second;
+			} else if( has_prefix(field.first, L"new_maj_value_") 
+				&& is_valid_int(field.first.substr(14))) {
+				int idx = stoi(field.first.substr(14));
+				new_majors[idx].position = idx;
+				new_majors[idx].value.code = w2s(field.second);
+			} else if( has_prefix(field.first, L"new_min_value_") 
+			&& is_valid_int(field.first.substr(14))) {
+				int idx = stoi(field.first.substr(14));
+				new_minors[idx].position = idx;
+				new_minors[idx].value.code = w2s(field.second);
+			} else {
+				continue;
+			}
+			fields[field.first] = field.second;
 		}
 	}
-	return env.path + L"?mode=edit";
+	std::wstring continuation_get_params() const {
+		std::wstring args(L"mode=edit");
+		args += L"&maj_new=" + std::to_wstring(new_majors.size());
+		args += L"&min_new=" + std::to_wstring(new_minors.size());
+		return args;
+	}
+	
+};
+CPL_END_NAMESPACED
+
+ON_BAD_POST
+	continued_traits traits(fields);
+	env.post_outcome.insert(traits.fields.begin(), traits.fields.end());
+	return env.path + L'?' + traits.continuation_get_params();
 END_BAD_POST
 
 PERFORM_POST
 	using namespace std;
 
-	map<db::pkey_t, wstring> trait_bodies;
-	// First, populate the continuation.
-	for(auto &field : fields) {
-		if(has_prefix(field.first, L"trait_body_")) {
-			env.post_outcome[field.first] = field.second;
-			try {
-				trait_bodies[stoll(field.first.substr(11))] = field.second;
-			} catch (invalid_argument e) {
-				//TODO(cwajh): assert log
-			} catch (out_of_range e) {
-				//TODO(cwajh): assert log
-			}
-		}
-	}
-	wstring retry_path = env.path + L"?mode=edit";
+	continued_traits traits(fields);
+	env.post_outcome.insert(traits.fields.begin(), traits.fields.end());
+	wstring retry_path = env.path + L'?' + traits.continuation_get_params();
 
 	odb::core::transaction txn (env.p_odb->begin());
 	P<db::mun> user = current_user(env.p_odb, env.session);
@@ -85,8 +122,8 @@ PERFORM_POST
 			+ "ORDER BY" + q_trait::position
 		);
 		for(auto &trait : result) {
-			auto post_it = trait_bodies.find(trait.trait_id);
-			if (post_it != trait_bodies.end()) {
+			auto post_it = traits.updated_bodies.find(trait.trait_id);
+			if (post_it != traits.updated_bodies.end()) {
 				try {
 					trait.value = bbcode::block(w2s(post_it->second));
 				} catch (const bbcode::trace::parse_error &error) {
@@ -96,13 +133,13 @@ PERFORM_POST
 					return retry_path;
 				}
 				env.p_odb->update(trait);
-				// At the end of the iteration, trait_bodies should be emptied.
-				trait_bodies.erase(post_it);
+				// At the end of the iteration, updated_bodies should be emptied.
+				traits.updated_bodies.erase(post_it);
 			}
 		}
-		if(!trait_bodies.empty()) {
+		if(!traits.updated_bodies.empty()) {
 			env.post_error = L"Some traits were scheduled to be written but don't exist for this muse.<br/>";
-			for(auto &unwritten_trait : trait_bodies)
+			for(auto &unwritten_trait : traits.updated_bodies)
 			{
 				env.post_error += std::to_wstring(unwritten_trait.first) + L";";
 			}
@@ -124,6 +161,8 @@ GEN_HEADERS
 		db::muse muse;
 		vector<db::trait> major_traits;
 		vector<db::trait> minor_traits;
+		vector<db::trait> new_major_traits;
+		vector<db::trait> new_minor_traits;
 		db::artwork current_image;
 		bool has_prev_img = false;
 		bool has_next_img = false;
@@ -153,7 +192,7 @@ GEN_HEADERS
 		}
 		muse_info.found = true;
 		muse_info.muse = *(result.begin());
-	}
+	}	
 	{
 		typedef odb::query<db::trait> q_trait;
 		auto result = env.p_odb->template query<db::trait>(
@@ -175,6 +214,31 @@ GEN_HEADERS
 				//TODO(cwajh): assert log
 			}
 		}
+	}
+	int new_trait_ct = 0;
+	try {
+		new_trait_ct = stoi(env.get[L"maj_new"]);
+	} catch (invalid_argument e) {
+	} catch (out_of_range e) {
+	}
+	for(int i=0; i<new_trait_ct; ++i) {
+		db::trait new_trait;
+		new_trait.name = env.post_outcome[L"new_maj_name_" + to_wstring(i)];
+		new_trait.value.code = w2s(env.post_outcome[L"new_maj_value_" + to_wstring(i)]);
+		new_trait.position = i;
+		muse_info.new_major_traits.push_back(new_trait);
+	}
+	try {
+		new_trait_ct = stoi(env.get[L"min_new"]);
+	} catch (invalid_argument e) {
+	} catch (out_of_range e) {
+	}
+	for(int i=0; i<new_trait_ct; ++i) {
+		db::trait new_trait;
+		new_trait.name = env.post_outcome[L"new_min_name_" + to_wstring(i)];
+		new_trait.value.code = w2s(env.post_outcome[L"new_min_value_" + to_wstring(i)]);
+		new_trait.position = i;
+		muse_info.new_minor_traits.push_back(new_trait);
 	}
 
 	muse_info.editor = false;
@@ -286,6 +350,12 @@ END_GEN_HEADERS
 					&& }
 					>
 				&&	}
+				&&	if (params.editor) for (auto trait : params.new_major_traits) {
+					<dt.stat_name <input(name='new_maj_name_&{{ trait.position }}&' value=&'{ trait.name }'&) /> >
+					<dd.stat_value 
+						<textarea(name='new_maj_value_&{{trait.position}}&') &{{ trait.value.whtml_escaped_code() }}&>
+					>
+				&&	}
 			>
 		>
 		< div#minor_pane
@@ -299,6 +369,12 @@ END_GEN_HEADERS
 					&& }
 					>
 				<{{ } }}>
+				&&	if (params.editor) for (auto trait : params.new_minor_traits) {
+					<dt.stat_name <input(name='new_min_name_&{{ trait.position }}&' value=&'{ trait.name }'&) /> >
+					<dd.stat_value 
+						<textarea(name='new_min_value_&{{trait.position}}&') &{{ trait.value.whtml_escaped_code() }}&>
+					>
+				&&	}
 			>
 			&& if (params.editor) {
 			<input(type='submit' value='Save Changes') >
