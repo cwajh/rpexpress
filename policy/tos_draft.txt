@@ -10,12 +10,13 @@ In other words, while we *want* to make this a useful venue, we can't *promise* 
 Let's repeat that: the site has no warranty of any kind, explicit or implicit.
 * There's no warranty that the site will even do the basic job it claims to do.
 * Nor be fitting for any particular purpose.
-* And we're explicitly disclaiming any other warranties you may have assumed were in effect.
+* And we're explicitly disclaiming any other warranties you may have assumed were in effect, or that we may have mentioned before.
 To the extent that there's risk, you need to accept that risk - and responsibility for recovering from it - yourself.
 You need to agree that you won't hold us liable if:
 * Something about the site causes you damages or harms you (even if we knew those damages were possible).
 * Someday you can no longer access it.
 * You get in trouble for your use of the site or for the stuff you post here.
+And you need to agree that if *we* get in legal trouble for your actions, you'll indemnify us from that trouble.
 If you're taking legal risks by using our site, sorry, but you need to agree to face those risks alone.
 
 ==RIGHTS TO CONTENT==
@@ -27,8 +28,7 @@ available. That includes distributing, reproducing, performing, displaying, and 
 presentation, and metadata.
 
 We intend to give you some control of how your content is presented by default, but we will also give other users control of how content is 
-presented to them; your control isn't absolute.
-
+presented to them; your control isn't absolute, and our intent isn't a guarantee or a binding commitment.
 
 ==YOUR PRIVACY==
 
@@ -42,8 +42,8 @@ We use cookies to remember user log-ins and settings.
 
 Don't use this site to do anything that's illegal where you live, nor illegal where we live (California, USA).
 
-Don't use this site if you're under 13. There's legal reasons for this - strict requirements for how websites have to treat people under 
-13, which would be too hard for us to implement.
+Don't use this site if you're underage. There are strict legal requirements for how websites have to treat underage people, which would be too
+hard for us to implement, and we can't provide a child-safe environment anyway.
 
 A link to something from this site doesn't imply that we endorse that thing or have anything to do with it. This should be common sense.
 
