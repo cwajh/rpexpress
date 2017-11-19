@@ -2,7 +2,7 @@ export LOCALD = /home/rpexpress/local
 export CXXFLAGS = --std=c++1y -g -I$(PWD) -I$(LOCALD)/include -I. -Wall -Wno-unknown-pragmas
 
 TOP_CCS = session.cc urlencode.cc base64.cc keys.cc post.cc html_utility.cc genpaths_fcgi.cc user.cc crypto.cc \
-	bbcode/bbcode.cc bbcode/parse_trace.cc
+	bbcode/bbcode.cc bbcode/parse_trace.cc next_pkey.cc
 TOP_OBJECTS = $(TOP_CCS:.cc=.o)
 TOP_DEPFILES = $(TOP_CCS:.cc=.d)
 TOP_LIBS = -lboost_thread-mt -lboost_system-mt -lcryptopp -lodb -lodb-pgsql -lboost_date_time-mt

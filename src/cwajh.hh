@@ -1,6 +1,7 @@
 #ifndef INCLUDE_GUARD_FOR_CWAJH_HH
 #define INCLUDE_GUARD_FOR_CWAJH_HH
 #include <boost/locale/encoding_utf.hpp>
+#include <map>
 #include <sstream>
 #include <vector>
 
@@ -58,6 +59,16 @@ inline std::wstring fragment_from_url(const std::wstring &url) {
 inline bool is_valid_int(const std::wstring &str) {
 	try {
 		stoi(str);
+		return true;
+	} catch (std::invalid_argument e) {
+		return false;
+	} catch (std::out_of_range e) {
+		return false;
+	}
+}
+inline bool is_valid_ll(const std::wstring &str) {
+	try {
+		stoll(str);
 		return true;
 	} catch (std::invalid_argument e) {
 		return false;
@@ -134,6 +145,10 @@ inline std::wstring html_entity_escape(const std::wstring &txt) {
 		}
 	}
 	return escaped.str();
+}
+
+bool has_key(auto collection, auto key) {
+	return collection.find(key) != collection.end();
 }
 
 #endif /*INCLUDE_GUARD_FOR_CWAJH_HH*/

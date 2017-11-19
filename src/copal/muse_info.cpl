@@ -7,6 +7,7 @@
 #include <path_info.hh>
 #include <set>
 #include <user.hh>
+#include <next_pkey.hh>
 
 #include "db/rpexpress.hh"
 #include "db/rpexpress.odb.hh"
@@ -19,42 +20,69 @@
 	what about adds? not one at a time, clearly. +1/+5 buttons which reload and increment a GET parameter. again, continuing.
 */
 CPL_NAMESPACED
+
+inline bool extract_int_suffix(const std::wstring &str, const std::wstring &prefix, int *out_suffix) {
+	if(!has_prefix(str, prefix)) {
+		return false;
+	}
+	std::wstring suffix = str.substr(prefix.length());
+	try {
+		*out_suffix = stoi(suffix);
+		return true;
+	} catch (std::invalid_argument e) {
+		return false;
+	} catch (std::out_of_range e) {
+		return false;
+	}
+	// How do you get here?
+	return false;
+}
+
 struct continued_traits {
 	std::map<int, db::trait> new_majors;
 	std::map<int, db::trait> new_minors;
 	std::map<db::pkey_t, std::wstring> updated_bodies;
 	std::map<std::wstring, std::wstring> fields;
-	continued_traits(const std::map<std::wstring, std::wstring> &received_fields) {
+	int add_major_ct;
+	int add_minor_ct;
+	std::set<db::pkey_t> to_delete;
+	bool ok_to_post;
+	continued_traits(const std::map<std::wstring, std::wstring> &received_fields) : add_major_ct(0), add_minor_ct(0) {
 		for(auto &field : received_fields) {
-			if(has_prefix(field.first, L"trait_body_")) {
-				try {
-					updated_bodies[stoll(field.first.substr(11))] = field.second;
-				} catch (std::invalid_argument e) {
-					//TODO(cwajh): assert log
-				} catch (std::out_of_range e) {
-					//TODO(cwajh): assert log
-				}
-			} else if( has_prefix(field.first, L"new_maj_name_") 
-				&& is_valid_int(field.first.substr(13))) {
-				int idx = stoi(field.first.substr(13));
+			int idx = -1;
+			if(has_prefix(field.first, L"trait_body_")
+				&& is_valid_ll(field.first.substr(11))) {
+				updated_bodies[stoll(field.first.substr(11))] = field.second;
+			} else if( extract_int_suffix(field.first,  L"new_maj_name_", &idx)) {
 				new_majors[idx].position = idx;
 				new_majors[idx].name = field.second;
-			} else if( has_prefix(field.first, L"new_min_name_") 
-				&& is_valid_int(field.first.substr(13))) {
-				int idx = stoi(field.first.substr(13));
+				new_majors[idx].category = db::major;
+			} else if( extract_int_suffix(field.first, L"new_min_name_", &idx)) {
 				new_minors[idx].position = idx;
 				new_minors[idx].name = field.second;
-			} else if( has_prefix(field.first, L"new_maj_value_") 
-				&& is_valid_int(field.first.substr(14))) {
-				int idx = stoi(field.first.substr(14));
+				new_minors[idx].category = db::minor;
+			} else if( extract_int_suffix(field.first, L"new_maj_value_", &idx)) {
 				new_majors[idx].position = idx;
 				new_majors[idx].value.code = w2s(field.second);
-			} else if( has_prefix(field.first, L"new_min_value_") 
-			&& is_valid_int(field.first.substr(14))) {
-				int idx = stoi(field.first.substr(14));
+				new_majors[idx].category = db::major;
+			} else if( extract_int_suffix(field.first, L"new_min_value_", &idx)) {
 				new_minors[idx].position = idx;
 				new_minors[idx].value.code = w2s(field.second);
+				new_minors[idx].category = db::minor;
 			} else {
+				// one-time changes
+				int suffix = -1;
+				if( extract_int_suffix(field.first, L"add_majors_", &suffix))  {
+					add_major_ct += suffix;
+					ok_to_post = false;
+				} else if( extract_int_suffix(field.first, L"add_minors_", &suffix)) {
+					add_minor_ct += suffix;
+					ok_to_post = false;
+				} else if( has_prefix(field.first, L"delete_trait_") 
+				&& is_valid_ll(field.first.substr(13))) {
+					to_delete.insert(stoll(field.first.substr(13)));
+					ok_to_post = false;
+				}
 				continue;
 			}
 			fields[field.first] = field.second;
@@ -62,8 +90,8 @@ struct continued_traits {
 	}
 	std::wstring continuation_get_params() const {
 		std::wstring args(L"mode=edit");
-		args += L"&maj_new=" + std::to_wstring(new_majors.size());
-		args += L"&min_new=" + std::to_wstring(new_minors.size());
+		args += L"&maj_new=" + std::to_wstring(new_majors.size() + add_major_ct);
+		args += L"&min_new=" + std::to_wstring(new_minors.size() + add_minor_ct);
 		return args;
 	}
 	
@@ -114,14 +142,17 @@ PERFORM_POST
 		env.post_error += muse_for_path(env.path) + L", doesn't seem to belong to you.";
 		return retry_path;
 	}
+
 	// And now, update can finally begin.
-	{
+	if (traits.ok_to_post){
+		int latest_position = 0;
 		typedef odb::query<db::trait> q_trait;
 		auto result = env.p_odb->template query<db::trait>(
 			(q_trait::character == q_trait::_val(muse))
 			+ "ORDER BY" + q_trait::position
 		);
 		for(auto &trait : result) {
+			latest_position = trait.position;
 			auto post_it = traits.updated_bodies.find(trait.trait_id);
 			if (post_it != traits.updated_bodies.end()) {
 				try {
@@ -145,6 +176,18 @@ PERFORM_POST
 			}
 			txn.rollback();
 			return retry_path;
+		}
+		for (auto &trait : traits.new_majors) {
+			trait.second.trait_id = next_pkey();
+			trait.second.position = ++latest_position;
+			trait.second.character = std::make_shared<db::muse>(muse);
+			env.p_odb->persist(trait.second);
+		}
+		for (auto &trait : traits.new_minors) {
+			trait.second.trait_id = next_pkey();
+			trait.second.position = ++latest_position;
+			trait.second.character = std::make_shared<db::muse>(muse);
+			env.p_odb->persist(trait.second);
 		}
 	}
 	txn.commit();
