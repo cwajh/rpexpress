@@ -110,6 +110,7 @@ PERFORM_POST
 	continued_traits traits(fields);
 	env.post_outcome.insert(traits.fields.begin(), traits.fields.end());
 	wstring retry_path = env.path + L'?' + traits.continuation_get_params();
+	init_pkeys();
 
 	odb::core::transaction txn (env.p_odb->begin());
 	P<db::mun> user = current_user(env.p_odb, env.session);

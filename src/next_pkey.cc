@@ -33,12 +33,17 @@ namespace db {
 				}
 				//current now has the first value for the given instance. :)
 			}
+			void ping(){ /*just forces it to exist*/ }
 			pkey_t next() {
 				return current++;
 			}
 		};
 		thread_local pkey_generator my_generator;
 	}
+}
+
+void init_pkeys() {
+	db::next_pkey::my_generator.ping();
 }
 
 db::pkey_t next_pkey() {
