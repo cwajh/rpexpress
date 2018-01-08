@@ -190,6 +190,13 @@ PERFORM_POST
 			trait.second.character = std::make_shared<db::muse>(muse);
 			env.p_odb->persist(trait.second);
 		}
+	} else {
+		// Deletions and/or reorders to process. Don't commit text CHANGES just yet.
+		for (db::pkey_t condemned_pkey : traits.to_delete) {
+			env.p_odb->template erase<db::trait> (condemned_pkey);
+		}
+		txn.commit();
+		return retry_path;
 	}
 	txn.commit();
 	return env.path; // back to the profile page from whence you came
@@ -384,7 +391,7 @@ END_GEN_HEADERS
 			<dl.stat_sheet#major_stats
 				&&	for (auto trait : params.major_traits) {
 					&& if (params.editor) {
-						<div(style='float:right') Delete >
+						<input.delete_trait(type='submit' name='delete_trait_&{{ trait.trait_id }}&' value='Delete') />
 					&& }
 					<dt.stat_name &{{ trait.name }}&> <dd.stat_value 
 					&& if (params.editor) {
@@ -405,6 +412,9 @@ END_GEN_HEADERS
 		< div#minor_pane
 			< dl.stat_sheet#minor_stats
 				<{{ for (auto trait : params.minor_traits) { }}>
+					&& if (params.editor) {
+						<input.delete_trait(type='submit' name='delete_trait_&{{ trait.trait_id }}&' value='Delete') />
+					&& }
 					<dt.stat_name &{{ trait.name }}&> <dd.stat_value 
 					&& if (params.editor) {
 						<textarea(name='trait_body_&{{trait.trait_id}}&') &{{ trait.value.whtml_escaped_code() }}&>

@@ -154,6 +154,20 @@ br.nl {
 	margin-bottom:1em;
 }
 
+input.delete_trait {
+	float:right;
+	background: none;
+	border: none;
+	display: inline;
+	font: inherit;
+	margin: 0;
+	padding: 0;
+	outline: none;
+	outline-offset: 0;
+	cursor: pointer;
+	font-weight: bold;
+}
+
 #gallery_items {
 	/* display:table;
 	border-collapse:collapse; */
