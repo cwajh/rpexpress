@@ -364,7 +364,15 @@ END_GEN_HEADERS
 		&& }
 		< div#major_pane
 
-			< h1#muse_name &{{ params.muse.name }}&>
+			< h1#muse_name &{{ params.muse.name }}&
+				&& if(params.muse.owner && params.user && params.muse.owner->mun_id == params.user->mun_id) {
+				&&  if(params.editor) {
+					<a.emoji_button(href=&'{ params.path }'& title='Cancel') &#x274c;>
+				&&  } else {
+					<a.emoji_button(href=&'{ params.path + L"?mode=edit" }'& title='Edit') &#x1f4dd;>
+				&&  }
+				&& }
+			>
 			< div#muse_portraits
 				&/* Sorry this section is a mess. 
 				  * All three img tags must have zero padding whitespace.
